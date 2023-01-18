@@ -167,7 +167,7 @@ function elaborePointConeOuvertversL(vg::Vector{tGenerateur}, k::Int64, pB::tPoi
 #    @show pC, pN
 
     # retient pN si pC domine pN (afin d'ouvrir le cone)
-    if pC.x < pN.x  &&  pC.y < pN.y
+    if (pC.x < pN.x)  &&  (pC.y < pN.y)
         # remplace pC par pN
         pC=tPoint( pA.x , pB.y )
     end
