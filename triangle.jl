@@ -1,6 +1,8 @@
 using SparseArrays
+using Random
 include("./src/GMdatastructures.jl")
 
+Random.seed!(314)
 
 #=
 If horizontal = true then the ranges stores the vertical ranges of integrals points along the horizontal axis.
@@ -48,10 +50,9 @@ function extractIntegralTriangle(vertices::Vector{tPoint})::integralTriangle
     println(newvertices)
     l::Int64 = Int64(ceil(maximum(map(a->a.x, newvertices))))
     h::Int64 = Int64(ceil(maximum(map(a->a.y, newvertices))))
-    size::Float64 = l
-    transposed = false
-    sizeX = l
-    sizeY = h
+    transposed::Bool = false
+    sizeX::Int64 = l
+    sizeY::Int64 = h
     if h <= l # ranges will be represented as horizontal ranges for each integer between 0 and ceil(l)
         sizeX = h
         sizeY = l
@@ -60,28 +61,47 @@ function extractIntegralTriangle(vertices::Vector{tPoint})::integralTriangle
     ranges::Dict{Int64,Tuple{Int64,Int64}} = Dict{Int64,Tuple{Int64,Int64}}()
     sizehint!(ranges,sizeX)
     nbint::Int64 = 0
-    #TODO TRANSPOSITION
+    # Transposition function
+    tr(point::tPoint) = transposed ? tPoint(point.y,point.x) : point
+    # Each integral point candidate is tested for its belonging to the triangle
     for i = 0:sizeX
-        println("testLB : ", [inTriangle(newvertices,tPoint(i,j)) for j = 0:sizeY])
-        lb::Int64 = findfirst([inTriangle(newvertices,tPoint(i,j)) for j = 0:sizeY])-1 # because the index starts from 0
+        lb::Int64 = findfirst([inTriangle(newvertices,tr(tPoint(i,j))) for j = 0:sizeY])-1 # because the index starts from 0
         ub::Int64 = lb + 1
-        while inTriangle(newvertices,tPoint(i,ub))
+        while inTriangle(newvertices,tr(tPoint(i,ub)))
             ub += 1
         end
         ranges[i]=(lb,ub-1)
         nbint += (ub-1)-lb+1
     end
-    #TODO UPDATE INTEVRAL
+    #TODO UPDATE INTERVAL
     for k in keys(ranges)
-        ranges[k]=tPoint(ranges[k][+minX,ranges[k].y+minY)
+        ranges[k]= transposed ? (ranges[k][1]+minY+1, ranges[k][2]+minX) : (ranges[k][1]+minX+1,ranges[k][2]+minY)
     end
     return integralTriangle(ranges,transposed,nbint)
 end
 
+function sampleInTriangle(triangle::integralTriangle)::tPoint
+    keyset = keys(triangle.ranges)
+    draw::Int64 = rand(1:triangle.nbintegrals)
+    p::Int64 = 1
+    k::Int64 = keyset[1]
+    sampledPoint::tPoint = tPoint()
+    while p!=draw
+        itr::Int64 = 0
+        lb::Int64 = triangle.ranges[k][1] # lower bound
+        ub::Int64 = triangle.ranges[k][2]
+        while ((base+itr)!=draw) && (itr+base)<=ub
+            itr+=1
+        end
+        p += itr
+    end
+    return 
+end
+
 function main()
-    x = tPoint(1.,1.5)
-    y = tPoint(3.,4.)
-    z = tPoint(0.,6.)
+    x = tPoint(1.5,1.)
+    y = tPoint(4.,3.)
+    z = tPoint(6.,0.)
     d = tPoint(6.,0.)
     println(inTriangle([x,y,z],d))
     println(extractIntegralTriangle([x,y,z]))
