@@ -23,7 +23,7 @@ include("GMprojection.jl")     # JuMP models for computing the projection on the
 include("GMmopPrimitives.jl")  # usuals algorithms in multiobjective optimization
 include("GMperturbation.jl")   # routines dealing with the perturbation of a solution when a cycle is detected
 include("GMquality.jl")        # quality indicator of the bound set U generated
-
+include("SampleIntegralPointsInSimplex.jl") # Some tools to sample uniformly integral points in simplex
 
 # ==============================================================================
 # Ajout d'une solution relachee initiale a un generateur
@@ -309,25 +309,25 @@ function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateu
                  arrowprops=Dict("arrowstyle"=>"->"))
         println("")
     end
-
+    return λ1, λ2
 end
-
 
 # ==============================================================================
 # Calcule la direction d'interet du nadir vers un point generateur
-function calculerDirections2(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur})
+function calculerDirections2(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur})::Tuple{Vector{Float64},Vector{Float64}} # OK 
     #function calculerDirections2(L, vg::Vector{tGenerateur})
-
+    println(L)
     nbgen = size(vg,1)
     λ1=Vector{Float64}(undef, nbgen)
     λ2=Vector{Float64}(undef, nbgen)
     for k in 1:nbgen
 
-        n1 = L[end].y[1]
-        n2 = L[1].y[2]
+        # Calcul du nadir
+        n1 = L[end].y[1] # max de la valeur du premier objectif
+        n2 = L[1].y[2] # max de la valeur du deuxième objectif
 
-        xm=vg[k].sRel.y[1]
-        ym=vg[k].sRel.y[2]
+        xm=vg[k].sRel.y[1] # coordonnée z1 du générateur
+        ym=vg[k].sRel.y[2] # coordonnée z2 du générateur
         Δx = abs(n1-xm)
         Δy = abs(n2-ym)
         λ1[k] =  1 - Δx / (Δx+Δy)
@@ -355,6 +355,96 @@ function calculerDirections2(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
     end
     return λ1, λ2
 end
+
+# ERWAN
+# TODO
+#= Calcul aléatoirement une direction basée sur une solution entière (admissible ou non) dans le cône de source nadir 
+pointant vers vg[k-1] et vg[k+1] 
+=# 
+function calculerDirections3(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur})::Tuple{Vector{Float64},Vector{Float64}}
+    nbgen::Int64 = size(vg,1)
+    λ1::Vector{Float64} = Vector{Float64}(undef, nbgen)
+    λ2::Vector{Float64} = Vector{Float64}(undef, nbgen)
+
+    n1 = L[end].y[1] # max value found of the first objective
+    n2 = L[1].y[2]  # max value found of the second objective
+    nadir = tPoint(n1,n2)
+    
+    # Edge generators -> We use the direction from calculerDirections2
+    # -> First one 
+    xm=vg[1].sRel.y[1] # first coordinate of the k-th generator
+    ym=vg[1].sRel.y[2] # second coordinate of the k-th generator
+    Δx = abs(n1-xm)
+    Δy = abs(n2-ym)
+    λ1[1]=1.
+    λ2[1]=1.
+    # -> Last one
+    xm=vg[end].sRel.y[1] # first coordinate of the k-th generator
+    ym=vg[end].sRel.y[2] # second coordinate of the k-th generator
+    Δx = abs(n1-xm)
+    Δy = abs(n2-ym)
+    λ1[end]=1.
+    λ2[end]=1.
+
+    # Inner generators
+    for k in 1:nbgen
+        if (k==1) | (k==nbgen) 
+            xm=vg[k].sRel.y[1] # coordonnée z1 du générateur
+            ym=vg[k].sRel.y[2] # coordonnée z2 du générateur
+            Δx = abs(n1-xm)
+            Δy = abs(n2-ym)
+            λ1[k] =  1 - Δx / (Δx+Δy)
+            λ2[k] =  1 - Δy / (Δx+Δy)
+        else
+            xuk = vg[k-1].sRel.y[1]
+            yuk = vg[k-1].sRel.y[2]
+            upperk = tPoint(xuk,yuk)
+
+            xlk = vg[k+1].sRel.y[1]
+            ylk = vg[k+1].sRel.y[2]
+            lowerk = tPoint(xlk,ylk)
+
+            xm=vg[k].sRel.y[1] # first coordinate of the k-th generator
+            ym=vg[k].sRel.y[2] # second coordinate of the k-th generator
+            Δx = abs(n1-xm)
+            Δy = abs(n2-ym)
+
+            sampling::Vector{tPoint} = sampleInSimplex([nadir,lowerk,upperk])
+
+            if !isempty(sampling) # An integral point random driven vector is computed
+                m = sampling[1]
+                Δx = abs(n1-m.x)
+                Δy = abs(n2-m.y)
+            end
+        end
+
+        λ1[k] = 1 - Δx / (Δx+Δy)
+        λ2[k] = 1 - Δy / (Δx+Δy)
+
+        @printf("  k= %3d   ",k)
+        @printf("  xm= %7.2f   ym= %7.2f ",xm,ym)
+        @printf("  Δx= %8.2f    Δy= %8.2f ",Δx,Δy)
+        @printf("  λ1= %6.5f    λ2= %6.5f \n",λ1[k],λ2[k])
+        if generateurVisualise == -1 
+            # affichage pour tous les generateurs
+            plot(n1, n2, xm, ym, linestyle="-", color="blue", marker="+")
+            annotate("",
+                     xy=[xm;ym],# Arrow tip
+                     xytext=[n1;n2], # Text offset from tip
+                     arrowprops=Dict("arrowstyle"=>"->"))        
+        elseif generateurVisualise == k
+            # affichage seulement pour le generateur k
+            plot(n1, n2, xm, ym, linestyle="-", color="blue", marker="+")
+            annotate("",
+                     xy=[xm;ym],# Arrow tip
+                     xytext=[n1;n2], # Text offset from tip
+                     arrowprops=Dict("arrowstyle"=>"->"))        
+        end 
+    end
+    return λ1, λ2
+end
+
+function 
  
 
 # ==============================================================================
@@ -605,5 +695,5 @@ end
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw10.txt", 6, 20, 20)
 @time GM("didactic5.txt", 5, 5, 10)
-#@time GM("sppnw29.txt", 6, 30, 20)
+@time GM("sppnw29.txt", 6, 30, 20)
 nothing

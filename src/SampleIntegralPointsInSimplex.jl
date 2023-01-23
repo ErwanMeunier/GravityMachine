@@ -1,9 +1,11 @@
+# Erwan Meunier - Nantes Université - January 2023 - erwan.meunier@etu.univ-nantes.fr
+
 using SparseArrays
 using Random
 using HypothesisTests # Useful in benchmarking sampleInSimplex
-include("./src/GMdatastructures.jl")
+include("GMdatastructures.jl")
 
-# Overriding isequal and hash functions for tPoint datastructure
+# Overriding isequal and hash functions for tPoint datastructure using in Set
 Base.isequal(a::tPoint,b::tPoint) = (a.x == b.x) & (a.y == b.y)
 Base.hash(a::tPoint, h::UInt) = hash(a.y, hash(a.x, hash(tPoint, h)))
 #Base.==(a::tPoint, b::tPoint) = Base.isequal(a,b)
@@ -30,7 +32,8 @@ function areaTriangle(a::tPoint,b::tPoint,c::tPoint)::Float64 # OK
     bc::Float64 = sqrt((b.x - c.x)^2 + (b.y - c.y)^2)
     ca::Float64 = sqrt((c.x - a.x)^2 + (c.y - a.y)^2)
     s::Float64 = (ab+bc+ca)/2
-    return sqrt(s*(s-ab)*(s-bc)*(s-ca))
+
+    return sqrt(abs(s*(s-ab)*(s-bc)*(s-ca)))
 end
 
 #=
@@ -69,18 +72,21 @@ function extractIntegralTriangle(vertices::Vector{tPoint})::integralTriangle #OK
     tr(point::tPoint) = transposed ? tPoint(point.y,point.x) : point
     # Each integral point candidate is tested for its belonging to the triangle
     for i = 0:sizeX
-        lb::Int64 = findfirst([inTriangle(newvertices,tr(tPoint(i,j))) for j = 0:sizeY])-1 # because the index starts from 0
-        ub::Int64 = lb + 1
-        while inTriangle(newvertices,tr(tPoint(i,ub)))
-            ub += 1
+        belonging::Vector{Bool} = [inTriangle(newvertices,tr(tPoint(i,j))) for j = 0:sizeY]
+        if reduce(|,belonging) # at least one integral point to create an interval
+            lb::Int64 = findfirst(belonging)-1 # because the index starts from 0
+            ub::Int64 = lb + 1
+            while inTriangle(newvertices,tr(tPoint(i,ub)))
+                ub += 1
+            end
+            ranges[(transposed ? i+minY : i+minX)]=(lb,ub-1)
+            nbint += (ub-1)-lb+1
         end
-        ranges[(transposed ? i+minY : i+minX)]=(lb,ub-1)
-        nbint += (ub-1)-lb+1
     end
     for k in keys(ranges) # translating interval
         ranges[k]= transposed ? (ranges[k][1]+minX, ranges[k][2]+minX) : (ranges[k][1]+minY,ranges[k][2]+minY)
     end
-    nbint==0 ? println("This triangle : ", vertices, " does not admit any integral point") : nothing
+    nbint==0 ? println("WARNING: This triangle : ", vertices, " does not admit any integral point") : nothing
     return integralTriangle(ranges,transposed,nbint)
 end
 
@@ -122,11 +128,11 @@ ATTENTION:
 function sampleInSimplex(vertices::Vector{tPoint}, nbp::Int64=1)::Vector{tPoint}
     @assert length(vertices)==3 "ERROR: This method only handles triangles -> Sampling aborted" # For now...
     triangle::integralTriangle = extractIntegralTriangle(vertices)
-    @assert triangle.nbintegrals>0 "ERROR: This triangle has not any integral point -> Sampling aborted"
+    #@assert triangle.nbintegrals>0 "ERROR: This triangle has not any integral point -> Sampling aborted"
     result::Vector{tPoint} = Vector{tPoint}()
     if nbp >= triangle.nbintegrals # All integral points are returned
         println("WARNING: The number of points to be sampled is greater or equal than the number of integral points in the simplex")
-        result = [tPoint((x,y)) for x in keys(triangle.ranges) for y in triangle.ranges[x][1]:triangle.ranges[x][2]]
+        result = [tPoint(x,y) for x in keys(triangle.ranges) for y in triangle.ranges[x][1]:triangle.ranges[x][2]]
         # Above: resp. lower bound and upper bound <=> triangle.ranges[x][1]:triangle.ranges[x][2]
     else
         sampledPoints::Set{tPoint} = Set{tPoint}()
@@ -164,8 +170,13 @@ function main()
     x = tPoint(1.,1.)
     y = tPoint(0.,6.)
     z = tPoint(6.,3.)
-    d = tPoint(6.,0.)
-    testUniformity(x,y,z)
+    #= Instance with warnings
+    x = tPoint(0.,0.1)
+    y = tPoint(0.1,0.2)
+    z = tPoint(0.3,0.4)
+    =#
+    sampleInSimplex([x,y,z])
+    #testUniformity(x,y,z)
 end
 main()
 
