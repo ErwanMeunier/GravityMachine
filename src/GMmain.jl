@@ -443,10 +443,6 @@ function calculerDirections3(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
     end
     return λ1, λ2
 end
-
-function 
- 
-
 # ==============================================================================
 # point d'entree principal
 
@@ -555,7 +551,7 @@ function GM( fname::String,
     for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
         temps = time()
         trial = 0
-        H =(Vector{Int64})[]
+        H =Set{Vector{Int64}}()
 
 #perturbSolution30!(vg,k,c1,c2,d)
 
@@ -566,13 +562,14 @@ function GM( fname::String,
 
         push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
         println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
-
+        
         while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
 
             trial+=1
-
+            α = 1/(2^(trial-1))
+            println("   α = ", α)
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
-            projectingSolution!(vg,k,A,c1,c2,λ1,λ2,d)
+            projectingSolution!(vg,k,A,c1,c2,λ1,λ2,d,α)
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
             if !isFeasible(vg,k)
@@ -692,8 +689,8 @@ end
 # ==============================================================================
 
 #@time GM("sppaa02.txt", 6, 20, 20)
-#@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
+@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw10.txt", 6, 20, 20)
-@time GM("didactic5.txt", 5, 5, 10)
-@time GM("sppnw29.txt", 6, 30, 20)
+#@time GM("didactic5.txt", 5, 5, 10)
+#@time GM("sppnw29.txt", 6, 30, 20)
 nothing

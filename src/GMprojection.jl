@@ -19,15 +19,17 @@ end
 # ==============================================================================
 # Projete xTilde sur le polyedre X du SPA avec norme-L1
 # version avec somme ponderee donnant la direction vers le generateur k
-
+# α ∈ [0,1] -> Module l'utilisation de la projection guidée
 function Δ2SPAbis(A::Array{Int,2}, xTilde::Array{Int,1}, 
-                  c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64})
+                  c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
 
     nbctr = size(A,1)
     nbvar = size(A,2)
     idxTilde0, idxTilde1 = split01(xTilde)
 
-    cλ = λ1[k].*c1 + λ2[k].*c2
+    cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
+    #cλ = 1.0 .+ α.*(λ1[k].*c1 + λ2[k].*c2  .-1)
+    #println("cλ :", cλ)
     proj = Model(GLPK.Optimizer)
     @variable(proj, 0.0 <= x[1:length(xTilde)] <= 1.0 )
 #    @objective(proj, Min, sum(λ1[k]*x[i] for i in idxTilde0) + sum(λ2[k]*(1-x[i]) for i in idxTilde1) )
@@ -43,13 +45,13 @@ end
 function projectingSolution!(vg::Vector{tGenerateur}, k::Int64, 
                              A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1}, 
                              λ1::Vector{Float64}, λ2::Vector{Float64},
-                             d::tListDisplay)
+                             d::tListDisplay, α::Float64=1.)
 
     # --------------------------------------------------------------------------
     # Projete la solution entiere sur le polytope X 
 
 #    fPrj, vg[k].sPrj.x = Δ2SPA(A,vg[k].sInt.x)
-    fPrj, vg[k].sPrj.x = Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2)
+    fPrj, vg[k].sPrj.x = Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α)
 
     # Nettoyage de la valeur de vg[k].sPrj.x et calcul du point bi-objectif
     # reconditionne les valeurs 0 et 1 et arrondi les autres valeurs
