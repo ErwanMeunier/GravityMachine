@@ -178,5 +178,4 @@ function main()
     sampleInSimplex([x,y,z])
     #testUniformity(x,y,z)
 end
-main()
 

@@ -1,0 +1,69 @@
+include("GMmain.jl")
+using DataFrames, CSV
+
+
+const instanceDirectory = "../SPA/instances/"
+const tailleSampling = 6
+const maxTrial = 20
+const maxTime = 20
+
+function benchmarkGM()
+    filenames::Vector{String} = readdir(instanceDirectory)
+    qualities = Vector{Float64}()
+    nbcyclestotalVect = Vector{Int64}()
+    nbcyclesMaxVect = Vector{Int64}()
+    tpns = Vector{Int64}()
+    fpns = Vector{Int64}()
+    times = Vector{Float64}()
+    for instance in filenames
+            etime = @elapsed quality, nbcyclestotal, nbcyclesMax, tpn, fpn = GM(instance[4:end], tailleSampling, maxTrial, maxTime)
+            push!(qualities,quality)
+            push!(nbcyclestotalVect,nbcyclestotal)
+            push!(nbcyclesMaxVect,nbcyclesMax)
+            push!(tpns,tpn)
+            push!(fpns,fpn)
+            push!(times,etime)
+    end
+    output = DataFrame()
+    println(filenames)
+    println(qualities)
+    println(nbcyclestotalVect)
+    println(nbcyclesMaxVect)
+    println(tpns)
+    println(fpns)
+    println(times)
+    output[!, :Instance]=filenames
+    output[!, :Quality]=qualities
+    output[!, :Number_Of_Cycles]=nbcyclestotalVect
+    output[!, :Max_Number_Of_Cycles]=nbcyclesMaxVect
+    output[!, :Total_number_of_nd_points]=tpns
+    output[!, :Total_number_of_nd_points_found_by_GM]=fpns
+    output[!, :Time]=times
+
+    CSV.write("result.csv",output;delim=";")
+end
+
+function test()
+    filenames::Vector{String} = readdir(instanceDirectory)
+    for instance in filenames 
+        loadInstance2SPA(instance[4:end])
+    end
+end
+#=
+#@time GM("sppaa02.txt", 6, 20, 20)
+#@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
+#@time GM("sppnw10.txt", 6, 20, 20)
+#@time GM("didactic5.txt", 5, 5, 10)
+@time GM("sppnw29.txt", 6, 30, 20)
+nothing
+
+function GM( fname::String,
+    tailleSampling::Int64,
+    maxTrial::Int64,
+    maxTime::Int64
+  )
+
+=#
+
+# Output:
+# instance's name | quality | number of cycle in total | maximum number of cycles for each cone | "true number" of non-dominated points | "estimated number of non-dominated points"
