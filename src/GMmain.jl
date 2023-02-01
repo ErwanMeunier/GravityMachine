@@ -3,8 +3,8 @@
 
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
-const verbose = false
-const graphic = false
+const verbose = true
+const graphic = true
 
 println("-) Active les packages requis\n")
 using JuMP, GLPK, PyPlot, Printf, Random
@@ -408,11 +408,13 @@ function GM( fname::String,
         while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
 
             trial+=1
-            α = 1.
+            α = 1.# 1/(2^(trial-1))
+            β = 0.#0.4 + 0.6*trial/maxTrial
             nbcyclesMax = max(nbcyclesMax,trial)
             println("   α = ", α)
+            println("   β = ", β)
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
-            projectingSolution!(L,vg,k,A,c1,c2,d,α)
+            projectingSolution!(L,vg,k,A,c1,c2,d,α,β)
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
             if !isFeasible(vg,k)
@@ -538,7 +540,7 @@ end
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw10.txt", 6, 20, 20)
-@time GM("sppnw30.txt", 6, 20, 20)
+#@time GM("sppnw30.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
-#@time GM("sppnw29.txt", 6, 30, 20)
+@time GM("sppnw29.txt", 6, 30, 20)
 #nothing

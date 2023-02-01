@@ -51,13 +51,14 @@ function Δ2SPAbis(A::Array{Int,2}, xTilde::Array{Int,1},
     return objective_value(proj), value.(x)
 end
 
-function Δ2SPAbisCone(A::Array{Int,2}, xTilde::Array{Int,1}, 
-                  c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, α::Float64)
+function Δ2SPAbisCone(L::Vector{tSolution{Float64}} ,A::Array{Int,2}, xTilde::Array{Int,1}, 
+                  c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, α::Float64=1., β::Float64=0.5)
 
     nbctr = size(A,1)
     nbvar = size(A,2)
     idxTilde0, idxTilde1 = split01(xTilde)
-
+    gN = tPoint(L[end].y[1],L[1].y[2]) # global nadir point
+    lN = tPoint(nadirs[k].x+ β*(gN.x-nadirs[k].x),nadirs[k].y+ β*(gN.x-nadirs[k].y)) # local nadir point 
     cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
     #cλ = 1.0 .+ α.*(λ1[k].*c1 + λ2[k].*c2  .-1)
     #println("cλ :", cλ)
@@ -71,26 +72,41 @@ function Δ2SPAbisCone(A::Array{Int,2}, xTilde::Array{Int,1},
         @expression(proj, z1, sum(c1[i]*x[i] for i in 1:nbvar))
         @expression(proj, z2, sum(c2[i]*x[i] for i in 1:nbvar))
         # vg are in decreasing order considering their second coordinate
-        # Lines delimiting the cone are computed using the previous comment
+        # Hence, lines delimiting the cone are computed using:
+        # The k-1th and the k+1th generators
         u = tPoint(vg[k-1].sRel.y[1],vg[k-1].sRel.y[2])
         v = tPoint(vg[k+1].sRel.y[1],vg[k+1].sRel.y[2])
-        println("Nadirs : ", nadirs)
+        #--- Equation delimiting the current cone of research:
         # first line equation
-        a1 = (nadirs[k].y - u.y)/(nadirs[k].x - u.x)
+        a1 = (lN.y - u.y)/(lN.x - u.x)
         b1 = u.y- a1*u.x
         # second line equation
-        a2 = (nadirs[k].y - v.y)/(nadirs[k].x - v.x)
+        a2 = (lN.y - v.y)/(lN.x - v.x)
         b2 = v.y- a2*v.x
+        #--- 
         println("k=",k,"/",length(vg))
         println("First equation : ", a1, "*x+",b1)
         println("Second equation : ", a2, "*x+",b2)
-        # building up the 
-        if ()
-        elseif
-        elseif
+        # building up the cone
+        if (k!=1) & (k!=length(vg))
+            if (β==0.) # lines which delimits the current cone are respectively vertical and horizontal
+                println("β=0 => Vertical and horizontal constraints")
+                @constraint(proj, z2<= u.y)
+                @constraint(proj, z1<= v.x)
+            elseif (k-1)==1 # upmost cone
+                println("UPMOST CONE")
+                @constraint(proj, z2 <= u.y)
+                @constraint(proj, z2 >= a2*z1 + b2)
+            elseif (k+1)==length(vg) # lowest cone
+                println("LOWEST CONE")
+                @constraint(proj, z2 <= a1*z1 + b1)
+                @constraint(proj, z2 >= v.y)
+            else # inner cone
+                println("INNER CONE")
+                @constraint(proj, z2 <= a1*z1 + b1)
+                @constraint(proj, z2 >= a2*z1 + b2)
+            end   
         end
-        (k-1)==1 ? @constraint(proj, z2<=nadirs[1].y) : @constraint(proj, z2 <= a1*z1 + b1)
-        (k+1)==length(vg) ? @constraint(proj, z1<=nadirs[end].x) : @constraint(proj, z2 >= a2*z2 + b2)
     end
     # ---
     optimize!(proj)
@@ -102,7 +118,7 @@ end
 # projecte la solution entiere correspondant au generateur k et test d'admissibilite
 function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur}, k::Int64, 
                              A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1},
-                             d::tListDisplay, α::Float64=1.)
+                             d::tListDisplay, α::Float64=1.,β::Float64=0.5)
 
     # --------------------------------------------------------------------------
     # Projete la solution entiere sur le polytope X 
@@ -110,7 +126,7 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
     nadirs = computeLocalNadirs(vg,L)
     λ1,λ2 = calculerDirections2(L,vg)
 #    fPrj, vg[k].sPrj.x = Δ2SPA(A,vg[k].sInt.x)
-    fPrj, vg[k].sPrj.x = Δ2SPAbisCone(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,nadirs,vg,α)
+    fPrj, vg[k].sPrj.x = Δ2SPAbisCone(L,A,vg[k].sInt.x,c1,c2,k,λ1,λ2,nadirs,vg,α,β)
 
     # Nettoyage de la valeur de vg[k].sPrj.x et calcul du point bi-objectif
     # reconditionne les valeurs 0 et 1 et arrondi les autres valeurs
