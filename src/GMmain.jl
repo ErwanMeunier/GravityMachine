@@ -5,6 +5,8 @@ println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
 const verbose = true
 const graphic = true
+const slowexec = true
+const slowtime = 1
 
 println("-) Active les packages requis\n")
 using JuMP, GLPK, PyPlot, Printf, Random
@@ -66,8 +68,11 @@ end
 
 function split01(xTilde::Array{Int,1})
 
-   indices0 = (Int64)[]
-   indices1 = (Int64)[]
+   indices0 = Vector{Int64}()
+   indices1 = Vector{Int64}()
+
+   sizehint!(indices0,length(xTilde))
+   sizehint!(indices1,length(xTilde))
 
    for i=1:length(xTilde)
        if xTilde[i] == 0
@@ -80,6 +85,28 @@ function split01(xTilde::Array{Int,1})
    return indices0, indices1
 end
 
+# ==============================================================================
+# Returns two vectors where: 
+# The first one stores the index of integer values of x whereas the seconde one does the same for the floating point values of x
+function splitByType(x::Vector{Float64})::Tuple{Vector{Int64},Vector{Int64}}
+    # Vectors of indexes corresponding to each type: integer or floating point number
+    xInt::Vector{Int64} = Vector{Int64}()
+    xFloat::Vector{Int64} = Vector{Int64}()
+    # Allocates enough memory to store the indexes
+    sizehint!(xInt,length(x))
+    sizehint!(xFloat,length(x))
+
+    for i in 1:length(x)
+        # atol parameter should be set carefully and be consistent with other occurences of isapprox function
+        if isapprox(x[i],0,atol=10^-3) || isapprox(x[i],1,atol=10^-3)
+            push!(xInt,i)
+        else
+            push!(xFloat,i)
+        end
+    end
+
+    return xInt, xFloat
+end
 
 # ==============================================================================
 # test si une solution est admissible en verifiant si sa relaxation lineaire
@@ -117,7 +144,7 @@ end
 # nettoyage des valeurs des variables d'une solution x relachee sur [0,1]
 
 function nettoyageSolution!(x::Vector{Float64})
-
+    # TODO : using isapprox function could be better
     nbvar=length(x)
     for i in 1:nbvar
         if     round(x[i], digits=3) == 0.0
@@ -384,12 +411,12 @@ function GM( fname::String,
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
     # calcule les directions (λ1,λ2) pour chaque generateur a utiliser lors des projections
-    #λ1,λ2 = calculerDirections2(L,vg)
+    λ1,λ2 = calculerDirections2(L,vg)
 
     # ==========================================================================
 
     @printf("4) terraformation generateur par generateur \n\n")
-
+    labelInt = 1
     for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
         temps = time()
         trial = 0
@@ -400,29 +427,54 @@ function GM( fname::String,
         # rounding solution : met a jour sInt dans vg --------------------------
         #roundingSolution!(vg,k,c1,c2,d)  # un cone
         #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
-        roundingSolutionNew23!(vg,k,c1,c2,d) # un cone et LS sur generateur
+        protectedIndexOfInt::Vector{Int64}, xFloat::Vector{Int64} = splitByType(vg[k].sRel.x) # TODO: xFloat doesn't matter for now
 
+        arrowBaseX = vg[k].sRel.y[1] # graphic
+        arrowBaseY = vg[k].sRel.y[2] # graphic
+        roundingSolutionNew23!(vg,k,c1,c2,d) # un cone et LS sur generateur
+        labelInt += 1
+        dX = vg[k].sInt.y[1] - arrowBaseX
+        dY = vg[k].sInt.y[2] - arrowBaseY
+        graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="blue",label=string(labelInt)) : nothing
+        slowexec ? sleep(slowtime) : nothing
+        # => Only floating point value are modified so splitByType does have style a sense
         push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
-        println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
+        verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
         
         while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
-
+            
+            
             trial+=1
             α = 1.# 1/(2^(trial-1))
             β = 0.#0.4 + 0.6*trial/maxTrial
+            γ = 1.
             nbcyclesMax = max(nbcyclesMax,trial)
             println("   α = ", α)
             println("   β = ", β)
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
-            projectingSolution!(L,vg,k,A,c1,c2,d,α,β)
+            arrowBaseX = vg[k].sInt.y[1] # graphic
+            arrowBaseY = vg[k].sInt.y[2] # graphic
+            projectingSolution!(L,vg,k,A,c1,c2,d,protectedIndexOfInt,α,β)
+            labelInt += 1
+            dX = vg[k].sPrj.y[1] - arrowBaseX
+            dY = vg[k].sPrj.y[2] - arrowBaseY
+            graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange",label=string(labelInt)) : nothing
+            slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
-
+            plotProjToRound = []
             if !isFeasible(vg,k)
 
                 # rounding solution : met a jour sInt dans vg --------------------------
                 #roundingSolution!(vg,k,c1,c2,d)
                 #roundingSolutionnew24!(vg,k,c1,c2,d)
-                roundingSolutionNew23!(vg,k,c1,c2,d)
+                arrowBaseX = vg[k].sPrj.y[1] # graphic
+                arrowBaseY = vg[k].sPrj.y[2]
+                roundingSolutionNew23!(vg,k,c1,c2,d) # graphic
+                labelInt+=1
+                dX = vg[k].sInt.y[1] - arrowBaseX
+                dY = vg[k].sInt.y[2] - arrowBaseY 
+                graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="red",label=string(labelInt)) : nothing
+                slowexec ? sleep(slowtime) : nothing
                 println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
                 # test detection cycle sur solutions entieres ------------------
@@ -431,7 +483,15 @@ function GM( fname::String,
                     println("CYCLE!!!!!!!!!!!!!!!")
                     nbcyclestotal += 1
                     # perturb solution
+                    arrowBaseX = vg[k].sInt.y[1] # graphic
+                    arrowBaseY = vg[k].sInt.y[2]
                     perturbSolution30!(vg,k,c1,c2,d)
+                    labelInt+=1
+                    dX = vg[k].sInt.y[1] - arrowBaseX
+                    dY = vg[k].sInt.y[2] - arrowBaseY
+                    graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, shape="right", color="pink",label=string(labelInt)) : nothing
+                    slowexec ? sleep(slowtime) : nothing
+                    #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                 end
                 push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
 
@@ -540,7 +600,10 @@ end
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw10.txt", 6, 20, 20)
-#@time GM("sppnw30.txt", 6, 20, 20)
+@time GM("sppnw30.txt", 6, 20, 20)
+#@time GM("sppnw31.txt", 6, 20, 20)
+#@time GM("sppnw32.txt", 6, 20, 20)
+#@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
-@time GM("sppnw29.txt", 6, 30, 20)
+#@time GM("sppnw29.txt", 6, 30, 20)
 #nothing
