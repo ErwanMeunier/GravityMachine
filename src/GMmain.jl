@@ -28,7 +28,7 @@ include("GMprojection.jl")     # JuMP models for computing the projection on the
 include("GMmopPrimitives.jl")  # usuals algorithms in multiobjective optimization
 include("GMperturbation.jl")   # routines dealing with the perturbation of a solution when a cycle is detected
 include("GMquality.jl")        # quality indicator of the bound set U generated
-include("SampleIntegralPointsInSimplex.jl") # Some tools to sample uniformly integral points in simplex
+include("TriangleTools.jl") # Some tools to sample uniformly integral points in simplex
 
 # ==============================================================================
 # Ajout d'une solution relachee initiale a un generateur
@@ -416,11 +416,19 @@ function GM( fname::String,
     # ==========================================================================
 
     @printf("4) terraformation generateur par generateur \n\n")
-    labelInt = 1
-    for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
+    labelInt = 1 # graphical purpose
+    #--- Number of trials allowed
+
+    globalNadir = tPoint(L[end].y[1],L[1].y[2])
+    budgetMaxTrials = [Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[1].sRel.y[1],vg[1].sRel.y[2]),tPoint(vg[3].sRel.y[1],vg[3].sRel.y[2]),globalNadir)))]
+    append!(budgetMaxTrials,[Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[k-1].sRel.y[1],vg[k-1].sRel.y[2]),tPoint(vg[k+1].sRel.y[1],vg[k+1].sRel.y[2]),globalNadir))) for k in 2:(nbgen-1)])
+    append!(budgetMaxTrials,Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[nbgen-2].sRel.y[1],vg[nbgen-2].sRel.y[2]),tPoint(vg[nbgen].sRel.y[1],vg[nbgen].sRel.y[2]),globalNadir))))
+    #--- End of "Number of trials allowed"
+    println("Budget par générateur : ", budgetMaxTrials)
+    for k in [i for i in 1:nbgen if !isFeasible(vg,i)] # ORIGINAL: for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
         temps = time()
         trial = 0
-        H =Set{Vector{Int64}}()
+        H = Set{Vector{Int64}}()
 
 #perturbSolution30!(vg,k,c1,c2,d)
 
@@ -440,8 +448,8 @@ function GM( fname::String,
         # => Only floating point value are modified so splitByType does have style a sense
         push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
         verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
-        
-        while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
+
+        while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, budgetMaxTrials[k])) && !(t3=isTimeout(temps, maxTime))
             
             
             trial+=1
@@ -461,7 +469,7 @@ function GM( fname::String,
             graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange",label=string(labelInt)) : nothing
             slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
-            plotProjToRound = []
+
             if !isFeasible(vg,k)
 
                 # rounding solution : met a jour sInt dans vg --------------------------
@@ -600,9 +608,9 @@ end
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw10.txt", 6, 20, 20)
-@time GM("sppnw30.txt", 6, 20, 20)
+@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
-#@time GM("sppnw32.txt", 6, 20, 20)
+#@time GM("sppnw30.txt", 6, 20, 20)
 #@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)

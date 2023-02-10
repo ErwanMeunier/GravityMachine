@@ -21,7 +21,9 @@ struct integralTriangle
     tranposed::Bool
     nbintegrals::Int64
 end
-
+# ==========================================================
+# SAMPLING UNIFORMLY IN THE NUMBER OF LATTICE POINTS IN A TRIANGLE
+# ==========================================================
 
 #= Computes the area of the triangle delimited by a, b and c using the Heron's formula.
 -vertices must be of length 3
@@ -166,6 +168,18 @@ function testUniformity(x::tPoint,y::tPoint,z::tPoint)
     ChisqTest([test[k] for k in keys(test)])
 end
 
+# ==========================================================
+# COUNTING THE NUMBER OF LATTICE POINTS IN A INTO A TRIANGLE
+# ==========================================================
+# Ref: 
+# TODO
+
+# Counts the number of lattice points into the triangle defined by (x,y,z). VERY TEMPORARY function -> Expensive function
+function countLP(x::tPoint,y::tPoint,z::tPoint)::Int64
+    return extractIntegralTriangle([x,y,z]).nbintegrals
+end
+
+#
 function main()
     x = tPoint(1.,1.)
     y = tPoint(0.,6.)
