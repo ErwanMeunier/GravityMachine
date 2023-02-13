@@ -3,12 +3,12 @@
 
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
-const verbose = true
-const graphic = true
-const slowexec = true
-const slowtime = 1
+const verbose = false
+const graphic = false
+const slowexec = false
+const slowtime = 0
 
-println("-) Active les packages requis\n")
+verbose ? println("-) Active les packages requis\n") : nothing
 using JuMP, GLPK, PyPlot, Printf, Random
 verbose ? println("  Fait \n") : nothing
 
@@ -346,7 +346,6 @@ function GM( fname::String,
     verbose ? @printf("  f1_min=%8.2f ↔ f1_max=%8.2f (Δ=%.2f) \n",minf1RL, maxf1RL, maxf1RL-minf1RL) : nothing
     verbose ? @printf("  f2_min=%8.2f ↔ f2_max=%8.2f (Δ=%.2f) \n\n",minf2RL, maxf2RL, maxf2RL-minf2RL) : nothing
 
-
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
     @printf("2) calcule les generateurs par e-contrainte alternant minimiser z1 et z2\n\n")
@@ -420,11 +419,14 @@ function GM( fname::String,
     #--- Number of trials allowed
 
     globalNadir = tPoint(L[end].y[1],L[1].y[2])
-    budgetMaxTrials = [Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[1].sRel.y[1],vg[1].sRel.y[2]),tPoint(vg[3].sRel.y[1],vg[3].sRel.y[2]),globalNadir)))]
-    append!(budgetMaxTrials,[Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[k-1].sRel.y[1],vg[k-1].sRel.y[2]),tPoint(vg[k+1].sRel.y[1],vg[k+1].sRel.y[2]),globalNadir))) for k in 2:(nbgen-1)])
-    append!(budgetMaxTrials,Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[nbgen-2].sRel.y[1],vg[nbgen-2].sRel.y[2]),tPoint(vg[nbgen].sRel.y[1],vg[nbgen].sRel.y[2]),globalNadir))))
+    #budgetMaxTrials = [Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[1].sRel.y[1],vg[1].sRel.y[2]),tPoint(vg[3].sRel.y[1],vg[3].sRel.y[2]),globalNadir)))]
+    #append!(budgetMaxTrials,[Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[k-1].sRel.y[1],vg[k-1].sRel.y[2]),tPoint(vg[k+1].sRel.y[1],vg[k+1].sRel.y[2]),globalNadir))) for k in 2:(nbgen-1)])
+    #append!(budgetMaxTrials,Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[nbgen-2].sRel.y[1],vg[nbgen-2].sRel.y[2]),tPoint(vg[nbgen].sRel.y[1],vg[nbgen].sRel.y[2]),globalNadir))))
     #--- End of "Number of trials allowed"
-    println("Budget par générateur : ", budgetMaxTrials)
+    #println("Budget par générateur : ", budgetMaxTrials)
+    nbFeasible = 0
+    nbMaxTrials = 0
+    nbMaxTime = 0
     for k in [i for i in 1:nbgen if !isFeasible(vg,i)] # ORIGINAL: for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
         temps = time()
         trial = 0
@@ -435,7 +437,7 @@ function GM( fname::String,
         # rounding solution : met a jour sInt dans vg --------------------------
         #roundingSolution!(vg,k,c1,c2,d)  # un cone
         #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
-        protectedIndexOfInt::Vector{Int64}, xFloat::Vector{Int64} = splitByType(vg[k].sRel.x) # TODO: xFloat doesn't matter for now
+        #protectedIndexOfInt::Vector{Int64}, xFloat::Vector{Int64} = splitByType(vg[k].sRel.x) # TODO: xFloat doesn't matter for now
 
         arrowBaseX = vg[k].sRel.y[1] # graphic
         arrowBaseY = vg[k].sRel.y[2] # graphic
@@ -448,21 +450,19 @@ function GM( fname::String,
         # => Only floating point value are modified so splitByType does have style a sense
         push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
         verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
-
-        while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, budgetMaxTrials[k])) && !(t3=isTimeout(temps, maxTime))
-            
-            
+        nbcycles = 0
+        while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
             trial+=1
             α = 1.# 1/(2^(trial-1))
             β = 0.#0.4 + 0.6*trial/maxTrial
             γ = 1.
-            nbcyclesMax = max(nbcyclesMax,trial)
+            nbcyclesMax = max(nbcyclesMax,nbcycles)
             println("   α = ", α)
             println("   β = ", β)
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
             arrowBaseX = vg[k].sInt.y[1] # graphic
             arrowBaseY = vg[k].sInt.y[2] # graphic
-            projectingSolution!(L,vg,k,A,c1,c2,d,protectedIndexOfInt,α,β)
+            projectingSolution!(L,vg,k,A,c1,c2,d,α,β,trial==1) # first projection uses the integrity constraint 
             labelInt += 1
             dX = vg[k].sPrj.y[1] - arrowBaseX
             dY = vg[k].sPrj.y[2] - arrowBaseY
@@ -489,7 +489,7 @@ function GM( fname::String,
                 cycle = [vg[k].sInt.y[1],vg[k].sInt.y[2]] in H
                 if (cycle == true)
                     println("CYCLE!!!!!!!!!!!!!!!")
-                    nbcyclestotal += 1
+                    nbcycles += 1
                     # perturb solution
                     arrowBaseX = vg[k].sInt.y[1] # graphic
                     arrowBaseY = vg[k].sInt.y[2]
@@ -502,15 +502,19 @@ function GM( fname::String,
                     #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                 end
                 push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
-
             end
         end
+        nbcyclestotal += nbcycles
+
         if t1
             println("   feasible \n")
+            nbFeasible+=1
         elseif t2
             println("   maxTrial \n")
+            nbMaxTrials+=1
         elseif t3
             println("   maxTime \n")
+            nbMaxTime+=1
         end
 
 
@@ -600,7 +604,7 @@ function GM( fname::String,
     end
     
     # TEMPORARY TO BENCHMARK
-    return quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP)
+    return quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials
 end
 
 # ==============================================================================
@@ -608,7 +612,7 @@ end
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw10.txt", 6, 20, 20)
-@time GM("sppnw16.txt", 6, 20, 20)
+#@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
 #@time GM("sppnw30.txt", 6, 20, 20)
 #@time GM("sppnw40.txt", 6, 20, 20)

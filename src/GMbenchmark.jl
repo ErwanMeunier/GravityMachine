@@ -15,23 +15,29 @@ function benchmarkGM()
     tpns = Vector{Int64}()
     fpns = Vector{Int64}()
     times = Vector{Float64}()
+    feasibleReached = Vector{Int64}()
+    maxTimeReached = Vector{Int64}()
+    maxTrialsReached = Vector{Int64}()
     for instance in filenames
-            etime = @elapsed quality, nbcyclestotal, nbcyclesMax, tpn, fpn = GM(instance[4:end], tailleSampling, maxTrial, maxTime)
+            etime = @elapsed quality, nbcyclestotal, nbcyclesMax, tpn, fpn, nbFeasible, nbMaxTime, nbMaxTrials = GM(instance[4:end], tailleSampling, maxTrial, maxTime)
             push!(qualities,quality)
             push!(nbcyclestotalVect,nbcyclestotal)
             push!(nbcyclesMaxVect,nbcyclesMax)
             push!(tpns,tpn)
             push!(fpns,fpn)
             push!(times,etime)
+            push!(feasibleReached,nbFeasible)
+            push!(maxTimeReached,nbMaxTime)
+            push!(maxTrialsReached,nbMaxTrials)
     end
     output = DataFrame()
-    println(filenames)
-    println(qualities)
-    println(nbcyclestotalVect)
-    println(nbcyclesMaxVect)
-    println(tpns)
-    println(fpns)
-    println(times)
+    #println(filenames)
+    #println(qualities)
+    #println(nbcyclestotalVect)
+    #println(nbcyclesMaxVect)
+    #println(tpns)
+    #println(fpns)
+    #println(times)
     output[!, :Instance]=filenames
     output[!, :Quality]=qualities
     output[!, :Number_Of_Cycles]=nbcyclestotalVect
@@ -39,8 +45,10 @@ function benchmarkGM()
     output[!, :Total_number_of_nd_points]=tpns
     output[!, :Total_number_of_nd_points_found_by_GM]=fpns
     output[!, :Time]=times
-
-    CSV.write("result.csv",output;delim=";")
+    output[!, :Nb_of_feasible_points_found]=feasibleReached
+    output[!, :Nb_of_maxTime_reached]=maxTimeReached
+    output[!, :Nb_of_maxTrials_reached]=maxTrialsReached
+    CSV.write("./results/result.csv",output;delim=";")
 end
 
 function test()
