@@ -462,7 +462,7 @@ function GM( fname::String,
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
             arrowBaseX = vg[k].sInt.y[1] # graphic
             arrowBaseY = vg[k].sInt.y[2] # graphic
-            projectingSolution!(L,vg,k,A,c1,c2,d,α,β,trial==1) # first projection uses the integrity constraint 
+            projectingSolution!(L,vg,k,A,c1,c2,d,α,β,false) # first projection uses the integrity constraint 
             labelInt += 1
             dX = vg[k].sPrj.y[1] - arrowBaseX
             dY = vg[k].sPrj.y[2] - arrowBaseY
