@@ -16,19 +16,10 @@ const fields = [:Quality,
                 ]
 
 #=
-output[!, :Instance]=filenames
-    output[!, :Quality]=qualities
-    output[!, :Number_Of_Cycles]=nbcyclestotalVect
-    output[!, :Max_Number_Of_Cycles]=nbcyclesMaxVect
-    output[!, :Total_number_of_nd_points]=tpns
-    output[!, :Total_number_of_nd_points_found_by_GM]=fpns
-    output[!, :Time]=times
-    output[!, :Nb_of_feasible_points_found]=feasibleReached
-    output[!, :Nb_of_maxTime_reached]=maxTimeReached
-    output[!, :Nb_of_maxTrials_reached]=maxTrialsReached
+If characteristicBis is null only the values for the fiven characteristic is given, 
+the ratio of characteristic/characteristicBis is ploted otherwise.
 =#
-
-function plotQualities(filename::String, characteristic::Symbol, refFile::String=path*"resultRef.csv")
+function plotQualities(filename::String, characteristic::Symbol, refFile::String=path*"resultRef.csv", characteristicBis=nothing)
     # parsing 
     df = DataFrame(CSV.File(filename))
     refDf = DataFrame(CSV.File(refFile))
@@ -49,9 +40,15 @@ function plotQualities(filename::String, characteristic::Symbol, refFile::String
     fig.set_size_inches(20.,13.)
     ax1.tick_params(labelsize=6)
     plt.bar(xPos .- width/2,characteristicCurrent,width=width/2,label="New method",color="blue",)
-    plt.bar(xPos .+ width/2,characteristicRef,width=width/2,label="State-of-the-art results",color="green",)
-    yticks = [10*i for i=0:Int(ceil(max(maximum(characteristicRef),maximum(characteristicCurrent))/10))]
+    plt.bar(xPos .+ width/2,characteristicRef,width=width/2,label="State-of-the-art results",color="green")
+
+    # Setting the y_axis with a personalised density of ticks
+    nbpoints = 20
+    max_y = max(maximum(characteristicRef),maximum(characteristicCurrent))
+    yticks = range(start=0.,step=max_y/nbpoints,stop=max_y)
     plt.yticks(yticks, labels=[string(v) for v in yticks])
+    
+
     plt.xticks(xPos, collect(map(x->x[end-5:end-4],names)))#,fontsize=5)
     plt.xlabel("Instance")
     plt.ylabel(string(characteristic))
@@ -66,7 +63,7 @@ function plotQualities(filename::String, characteristic::Symbol, refFile::String
     plt.legend()
     #plt.show()
     #println("Saving path : ", filename[1:end-5]*"/"*string(characteristic)*".png")
-    plt.savefig(filename[1:end-5]*"/"*string(characteristic)*".png")
+    plt.savefig(filename[1:end-4]*"/"*string(characteristic)*".png")
     plt.close(fig)
 end
 
@@ -77,15 +74,16 @@ function main()
 
     for file in csvf
         try
-            mkdir(path*file[1:end-5])
+            mkdir(path*file[1:end-4])
         catch; Base.IOError # the directory already exists
-            nothing 
+            println("WARNING: The directory already exists -> Figures inside the directory will still be updated") 
         end
 
         for characteristic in fields
             try
                 plotQualities(path*file, characteristic)
             catch ArgumentError # compatibility with the former version of GMBenchmark which includes less measures
+                println("WARNING: retro-Compatibility mode activated")
                 nothing
             end
         end
