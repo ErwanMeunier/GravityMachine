@@ -175,7 +175,11 @@ function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1},
     @constraint(projInt, [i=1:nbctr],(sum((xInt[j]*A[i,j]) for j in 1:nbvar)) == 1)
     # Protecting components which are still integer
     optimize!(projInt)
-    return objective_value(projInt), value.(xInt)
+    #--- BENCHMARKING :
+    xInt = value.(xInt)
+    ratioBeforeAfter = length([true for i=1:length(xTilde) if !(isapprox(xInt[i],0,atol=10^-3)||isapprox(xInt[i],1,atol=10^-3))])/length(floatIndex)
+    #--- END BENCHMARKING
+    return objective_value(projInt), value.(xInt), ratioBeforeAfter
 end
 
 
@@ -187,7 +191,7 @@ end
 # c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, protectedIndexOfInt::Vector{Int64}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
 function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur}, k::Int64, 
                              A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1},
-                             d::tListDisplay, α::Float64=1.,β::Float64=0.5, MIPproj::Bool=false)
+                             d::tListDisplay, α::Float64=1.,β::Float64=0.5, MIPproj::Bool=true)
 
     # --------------------------------------------------------------------------
     # Projete la solution entiere sur le polytope X 
@@ -197,7 +201,8 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
     #fPrj, vg[k].sPrj.x = Δ2SPA(A,vg[k].sInt.x)
     #fPrj, vg[k].sPrj.x = Δ2SPAbisCone(L,A,vg[k].sInt.x,c1,c2,k,λ1,λ2,nadirs,vg,α,β)
 
-    fPrj, vg[k].sPrj.x = MIPproj ? Δ2SPABelgique(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α) : Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α)
+    
+    fPrj, vg[k].sPrj.x, ratioBeforeAfter = Δ2SPABelgique(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α) # : Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α)
     
     # Nettoyage de la valeur de vg[k].sPrj.x et calcul du point bi-objectif
     # reconditionne les valeurs 0 et 1 et arrondi les autres valeurs
@@ -249,4 +254,5 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
         # prepare pour l'iteration suivante
 #        vg[k].xRlx = deepcopy(vg[k].sPrj.x) !!!!!!!!!!!!!
     end
+    return ratioBeforeAfter # FOR BENCHMARKING PURPOSE ONLY
 end

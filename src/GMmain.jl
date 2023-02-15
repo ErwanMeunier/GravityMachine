@@ -365,7 +365,7 @@ function GM( fname::String,
     # TEMPORARY BENCHMARK
     nbcyclestotal = 0
     nbcyclesMax = 0
-
+    ratioBeforeAfter::Vector{Vector{Float64}} = [Vector{Float64}() for i=1:nbgen]
     for k=1:nbgen
 
         verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, L[k].y[1], L[k].y[2]) : nothing
@@ -462,7 +462,9 @@ function GM( fname::String,
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
             arrowBaseX = vg[k].sInt.y[1] # graphic
             arrowBaseY = vg[k].sInt.y[2] # graphic
-            projectingSolution!(L,vg,k,A,c1,c2,d,α,β,false) # first projection uses the integrity constraint 
+            # BENCHMARKING: ratioBeforeAfter
+            push!(ratioBeforeAfter[k],projectingSolution!(L,vg,k,A,c1,c2,d,α,β,true)) # first projection uses the integrity constraint 
+            # ---
             labelInt += 1
             dX = vg[k].sPrj.y[1] - arrowBaseX
             dY = vg[k].sPrj.y[2] - arrowBaseY
@@ -604,7 +606,8 @@ function GM( fname::String,
     end
     
     # TEMPORARY TO BENCHMARK
-    return quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials
+    println("ratioBeforeAfter :", ratioBeforeAfter)
+    return quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials, ratioBeforeAfter
 end
 
 # ==============================================================================

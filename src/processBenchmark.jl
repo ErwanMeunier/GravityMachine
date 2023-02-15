@@ -1,5 +1,6 @@
 using DataFrames
 using CSV
+using LaTeXStrings
 import PyPlot
 const plt = PyPlot
 plt.pygui(true)
@@ -14,7 +15,7 @@ const fields = [:Quality,
                 :Nb_of_maxTime_reached,
                 :Nb_of_maxTrials_reached
                 ]
-
+const pathRatio = "./RatioBeforeAfter/"
 #=
 If characteristicBis is null only the values for the fiven characteristic is given, 
 the ratio of characteristic/characteristicBis is ploted otherwise.
@@ -67,7 +68,7 @@ function plotQualities(filename::String, characteristic::Symbol, refFile::String
     plt.close(fig)
 end
 
-function main()
+function plotPerformances()
     csvf::Vector{String} = [file for file in readdir(path) if file[end-3:end]==".csv"]
 
     println("Files :", csvf)
@@ -88,6 +89,35 @@ function main()
             end
         end
     end
+end
+
+function plotRatioMIP()
+    directories = readdir(pathRatio)
+    for dir in directories
+        files = [file for file in readdir(pathRatio*dir) if (file[end-3:end]==".csv")] # to avoid existing .png files
+        println(files)
+        fig, ax = plt.subplots()
+        for file in files
+            nbgen = length(files)
+            println(pathRatio*dir*"/"*file)
+            data = DataFrame(CSV.File(pathRatio*dir*"/"*file))[!,:x1]
+            #map!(x-> x==NaN ? 0. : x, data, data) # MODIFY THIS
+            if !isempty(data)
+                println("Data :", data)
+                plt.plot(1:length(data),data,label=file[1:end-4])
+                plt.xticks(1:length(data),labels=[string(i) for i=1:length(data)])
+                plt.title("Instance "*dir[end-5:end-4]*"-Nb variables in R before / Nb of variables in R after")
+            end
+        end
+        plt.legend()
+        plt.show()
+        plt.savefig(pathRatio*dir*"/"*"vg")
+        plt.close(fig)
+    end
+end
+
+function main()
+    plotRatioMIP()
 end
 
 main()
