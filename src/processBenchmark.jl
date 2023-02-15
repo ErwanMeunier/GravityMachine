@@ -111,7 +111,7 @@ function plotRatioMIP()
         end
         plt.legend()
         plt.show()
-        plt.savefig(pathRatio*dir*"/"*"vg")
+        plt.savefig(pathRatio*dir*"/"*dir[end-5:end-4]*"vg")
         plt.close(fig)
     end
 end
