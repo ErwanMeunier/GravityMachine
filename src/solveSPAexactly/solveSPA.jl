@@ -65,29 +65,10 @@ function main()
         #try 
         println(pwd())
         c1, c2, A = loadInstance2SPA(instancesPath*file)
-        println("parsing OK")
-        println(timeLimit)
-        solveBiSPA!(c1,c2,A,times,i,nbsolLimit)
+        println("Parsing is OK")
+        push!(times,@elapsed solveBiSPA!(c1,c2,A,times,i,nbsolLimit))
         println(state)
-        #catch SystemError;
-        #    println("WARNING : "*instancesPath*file*" cannot be opened.")
-        #finally
-        #    System.out.println("Error not handled -> exit(2) !!!")
-        #    exit(2)
-        #    nothing
-        #end
     end
     output = DataFrame([instances,times],[:Instances,:Times])
     CSV.write("../results/timeExactSolving.csv", output)
-end
-
-f(x) = begin 2*x ; println(2*x) ; sleep(1.) end
-
-function test()
-    
-    #println("Testing f: f(3)")
-    for i in 1:10
-        @timeout 10 f(i) "fail"
-        #println(i)
-    end
 end

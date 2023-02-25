@@ -44,8 +44,8 @@ function computeLinearRelax2SPAInt(  nbvar::Int,
   optimize!(model)
 
   # Forcing of non-integer variables to be integer
-  xOutput::Vector{Int} = value.(x)
-  [set_binary(model[:x][i]) for i in eachindex(xOutput) if !(isapprox(x,0.,atol=1e-3)||isapprox(x,1.,atol=1e-3))] # set to binary non integer variables
+  xOutput::Vector{Float64} = value.(x)
+  [set_binary(model[:x][i]) for i in eachindex(xOutput) if !(isapprox(xOutput[i],0.,atol=1e-3)||isapprox(xOutput[i],1.,atol=1e-3))] # set to binary non integer variables
   optimize!(model) # re-optimization
 
   return objective_value(model), value.(x)

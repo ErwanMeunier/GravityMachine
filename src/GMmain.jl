@@ -346,7 +346,7 @@ function GM( fname::String,
     # TEMPORARY BENCHMARK
     nbcyclestotal = 0
     nbcyclesMax = 0
-    
+
     for k=1:nbgen
 
         verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, L[k].y[1], L[k].y[2]) : nothing
@@ -592,7 +592,7 @@ end
 
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
-#@time GM("sppnw10.txt", 6, 20, 20)
+@time GM("sppnw10.txt", 6, 20, 20)
 #@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
 #@time GM("sppnw30.txt", 6, 20, 20)

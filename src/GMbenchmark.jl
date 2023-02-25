@@ -18,16 +18,9 @@ function benchmarkGM()
     feasibleReached = Vector{Int64}()
     maxTimeReached = Vector{Int64}()
     maxTrialsReached = Vector{Int64}()
-    #=TODO
-    ratioBeforeAfter = Vector{Vector{Float64}}()
-    =#
-    try
-        mkdir("RatioBeforeAfter")
-    catch; Base.IOError # the directory already exists
-        println("WARNING: The directory already exists -> Data inside the directory will still be updated") 
-    end
+    
     for instance in filenames
-            etime = @elapsed quality, nbcyclestotal, nbcyclesMax, tpn, fpn, nbFeasible, nbMaxTime, nbMaxTrials, ratioBeforeAfter = GM(instance[4:end], tailleSampling, maxTrial, maxTime)
+            etime = @elapsed quality, nbcyclestotal, nbcyclesMax, tpn, fpn, nbFeasible, nbMaxTime, nbMaxTrials = GM(instance[4:end], tailleSampling, maxTrial, maxTime)
             push!(qualities,quality)
             push!(nbcyclestotalVect,nbcyclestotal)
             push!(nbcyclesMaxVect,nbcyclesMax)
@@ -37,14 +30,6 @@ function benchmarkGM()
             push!(feasibleReached,nbFeasible)
             push!(maxTimeReached,nbMaxTime)
             push!(maxTrialsReached,nbMaxTrials)
-            try
-                mkdir("./RatioBeforeAfter/"*instance)
-            catch; Base.IOError # the directory already exists
-                println("WARNING: The directory already exists -> Data inside the directory will still be updated") 
-            end
-            for k = 1:length(ratioBeforeAfter)
-                CSV.write("./RatioBeforeAfter/"*instance*"/"*string(k)*".csv", DataFrame([ratioBeforeAfter[k]],:auto);delim=";")
-            end
             #=
             For each column of the dataframe above, we have the evolution of the ratio of the number of 
             floating point variables in the projection.

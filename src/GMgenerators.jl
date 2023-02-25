@@ -5,7 +5,7 @@ function nettoyageSolution!(x::Vector{Float64})
     # TODO : using isapprox function could be better
     nbvar=length(x)
     for i in 1:nbvar
-        if     round(x[i], digits=3) == 0.0
+        if     round(x[i], digits=3) == 0.0 #wsh la zone
                    x[i] = 0.0
         elseif round(x[i], digits=3) == 1.0
                    x[i] = 1.0
@@ -49,7 +49,7 @@ function calculGenerateurs(A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1},
             verbose ? @printf("  z1 %2d : ϵ = %8.2f  ", j1, maxf2RL - (j1-1) * pasSample2) : nothing # echantillonage sur z2
 
             # calcul d'une solution epsilon-contrainte
-            f1RL, xf1RL = computeLinearRelax2SPA(nbvar, nbctr, A, c1, c2, maxf2RL - (j1-1) * pasSample2, 1)
+            f1RL, xf1RL = computeLinearRelax2SPAInt(nbvar, nbctr, A, c1, c2, maxf2RL - (j1-1) * pasSample2, 1)
 
             # reconditionne les valeurs 0 et 1 et arrondi les autres valeurs
             nettoyageSolution!(xf1RL)
