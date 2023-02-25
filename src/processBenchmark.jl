@@ -20,14 +20,14 @@ const pathRatio = "./RatioBeforeAfter/"
 If characteristicBis is null only the values for the fiven characteristic is given, 
 the ratio of characteristic/characteristicBis is ploted otherwise.
 =#
-function plotQualities(filename::String, characteristic::Symbol, refFile::String=path*"resultRef.csv", characteristicBis=nothing)
+function plotQualities(filename::String, characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"resultRef.csv")
     # parsing 
     df = DataFrame(CSV.File(filename))
     refDf = DataFrame(CSV.File(refFile))
     # getting some informations
     names = df[!,:Instance]
-    characteristicCurrent = df[!,characteristic]
-    characteristicRef = refDf[!,characteristic]
+    characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
+    characteristicRef = (characteristicBis==nothing ? refDf[!,characteristic] : (refDf[!,characteristic] ./ refDf[!,characteristicBis]))
     #println(characteristicCurrent)
     #println(characteristicRef)
     #println(names)
@@ -49,11 +49,12 @@ function plotQualities(filename::String, characteristic::Symbol, refFile::String
     yticks = range(start=0.,step=max_y/nbpoints,stop=max_y)
     plt.yticks(yticks, labels=[string(v) for v in yticks])
     
+    title::String = (characteristicBis==nothing ? string(characteristic) : string(characteristic)*"/"*string(characteristicBis))
 
     plt.xticks(xPos, collect(map(x->x[end-5:end-4],names)))#,fontsize=5)
     plt.xlabel("Instance")
-    plt.ylabel(string(characteristic))
-    plt.title("Comparison between GM ref and "*filename[1:end-3]*"-"*string(characteristic))
+    plt.ylabel(title)
+    plt.title("Comparison between GM ref and "*filename[1:end-3]*"-"*title)
     meanRef = sum(characteristicRef)/length(characteristicRef)
     plt.plot([xPos[1]-width,xPos[end]+width],[meanRef,meanRef],color="red")
     meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent)
@@ -64,7 +65,7 @@ function plotQualities(filename::String, characteristic::Symbol, refFile::String
     plt.legend()
     #plt.show()
     #println("Saving path : ", filename[1:end-5]*"/"*string(characteristic)*".png")
-    plt.savefig(filename[1:end-4]*"/"*string(characteristic)*".png")
+    plt.savefig(filename[1:end-4]*"/"*title*".png")
     plt.close(fig)
 end
 
@@ -81,6 +82,7 @@ function plotPerformances()
         end
 
         for characteristic in fields
+                plotQualities(path*file, characteristic, characteristicBis=:Time)
             try
                 plotQualities(path*file, characteristic)
             catch ArgumentError # compatibility with the former version of GMBenchmark which includes less measures
@@ -117,7 +119,8 @@ function plotRatioMIP()
 end
 
 function main()
-    plotRatioMIP()
+    plotPerformances()
+    #plotRatioMIP()
 end
 
-main()
+#main()

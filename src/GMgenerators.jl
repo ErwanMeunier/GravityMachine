@@ -1,4 +1,21 @@
 # ==============================================================================
+# Nettoyage des valeurs des variables d'une solution x relachee sur [0,1]
+
+function nettoyageSolution!(x::Vector{Float64})
+    # TODO : using isapprox function could be better
+    nbvar=length(x)
+    for i in 1:nbvar
+        if     round(x[i], digits=3) == 0.0
+                   x[i] = 0.0
+        elseif round(x[i], digits=3) == 1.0
+                   x[i] = 1.0
+        else
+                   x[i] = round(x[i], digits=3)
+        end
+    end
+end
+
+# ==============================================================================
 # Calcul des generateurs avec 2 ϵ-contraintes alternees jusqu'a leur rencontre
 
 function calculGenerateurs(A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1}, 

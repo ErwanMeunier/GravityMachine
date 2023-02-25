@@ -1,4 +1,6 @@
 # Tools
+# ==============================================================================
+# Self-explanatory
 function computeLocalNadirs(vg::Vector{tGenerateur}, L::Vector{tSolution{Float64}})::Vector{tPoint}
     @assert length(vg)>2 "vg must be of size greater or equal than 3"
     nadirs::Vector{tPoint} = Vector{tPoint}(undef, length(vg))
@@ -139,51 +141,26 @@ function Δ2SPAbisKeepInt(A::Array{Int,2}, xTilde::Array{Int,1},
 end
 
 function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1}, 
-    c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+    c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64=1.)
 
     nbctr = size(A,1)
     nbvar = size(A,2)
     idxTilde0, idxTilde1 = split01(xTilde)
-    # α = 1
-    #cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
-    #cλ = 1.0 .+ α.*(λ1[k].*c1 + λ2[k].*c2  .-1)
-    cλ = fill(1.,length(xTilde))
-    #cλ = λ1[k].*c1 + λ2[k].*c2
-    #println("cλ :", cλ)
+
+    cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
+
     proj = Model(GLPK.Optimizer)
     @variable(proj, 0.0 <= x[1:length(xTilde)] <= 1.0)
-    #@objective(proj, Min, sum(λ1[k]*x[i] for i in idxTilde0) + sum(λ2[k]*(1-x[i]) for i in idxTilde1) )
-    #@objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1))
     @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1)) 
     @constraint(proj, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)    
-
     optimize!(proj)
 
-    xRel = value.(x)
-    floatIndex = [i for i=1:length(xTilde) if !(isapprox(xRel[i],0,atol=10^-3)||isapprox(xRel[i],1,atol=10^-3))]
-    #println("continuous variables indexes:", floatIndex)
-    #println("Number of continuous variables: ", length(floatIndex))
-    projInt = Model(GLPK.Optimizer)
-    @variable(projInt, 0. <= xInt[1:length(xTilde)] <= 1.)
-    for i in floatIndex
-        set_binary(projInt[:xInt][i])
-    end
-    
-    #    @objective(proj, Min, sum(λ1[k]*x[i] for i in idxTilde0) + sum(λ2[k]*(1-x[i]) for i in idxTilde1) )
-    #@objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1))
-    @objective(projInt, Min, sum(xInt[i] for i in idxTilde0) + sum((1-xInt[i]) for i in idxTilde1)) 
-    @constraint(projInt, [i=1:nbctr],(sum((xInt[j]*A[i,j]) for j in 1:nbvar)) == 1)
-    # Protecting components which are still integer
-    optimize!(projInt)
-    #--- BENCHMARKING :
-    xInt = value.(xInt)
-    ratioBeforeAfter = length([true for i=1:length(xTilde) if !(isapprox(xInt[i],0,atol=10^-3)||isapprox(xInt[i],1,atol=10^-3))])/length(floatIndex)
-    #--- END BENCHMARKING
-    return objective_value(projInt), value.(xInt), ratioBeforeAfter
+    xOutput = value.(x)
+    [set_binary(projInt[:x][i]) for i=1:length(xTilde) if !(isapprox(xOutput[i],0,atol=10^-3)||isapprox(xOutput[i],1,atol=10^-3))]
+    optimize!(proj)
+
+    return objective_value(proj), value.(x)
 end
-
-
-
 
 # ==============================================================================
 # projecte la solution entiere correspondant au generateur k et test d'admissibilite
@@ -201,8 +178,7 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
     #fPrj, vg[k].sPrj.x = Δ2SPA(A,vg[k].sInt.x)
     #fPrj, vg[k].sPrj.x = Δ2SPAbisCone(L,A,vg[k].sInt.x,c1,c2,k,λ1,λ2,nadirs,vg,α,β)
 
-    
-    fPrj, vg[k].sPrj.x, ratioBeforeAfter = Δ2SPABelgique(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α) # : Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α)
+    fPrj, vg[k].sPrj.x = Δ2SPABelgique(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α) #: Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α)
     
     # Nettoyage de la valeur de vg[k].sPrj.x et calcul du point bi-objectif
     # reconditionne les valeurs 0 et 1 et arrondi les autres valeurs
@@ -254,5 +230,4 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
         # prepare pour l'iteration suivante
 #        vg[k].xRlx = deepcopy(vg[k].sPrj.x) !!!!!!!!!!!!!
     end
-    return ratioBeforeAfter # FOR BENCHMARKING PURPOSE ONLY
 end
