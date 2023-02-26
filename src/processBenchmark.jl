@@ -118,6 +118,41 @@ function plotRatioMIP()
     end
 end
 
+#= From: https://link.springer.com/article/10.1007/s101070100263
+Each subarray of data is a flavour of Gravity Machine. The lengths of names and data must be same.
+=#
+function performanceProfile(data::Vector{Vector{Float64}}, names::Vector{String})
+    @assert (length(data)==length(names)) "The number of names does not match the number of solvers"
+    path = "./performanceProfile"
+
+    try 
+        mkdir("performanceProfile")
+    catch e;
+        if e.code == -17
+            println("WARNING: The figures directory"*path*"already exists. Existing figures will be erased.")
+        else
+            println("Error not handled")
+            rethrow()
+        end
+    end
+
+    ns = length(data) # number of solvers
+    nbInst = length(data[1]) # number of instances
+    bestValues = [maximum(dataForOnesolver) for dataForOnesolver in data]
+    cumulatedRatios = [collect(cumsum(map(x->x/bestValues[s],data[s]))) for s in 1:ns]
+
+    fig, ax = plt.subplots()
+
+    for s in eachindex(cumulatedRatios)
+        plt.plot(1:nbInst,cumulatedRatios[s],label=names[s])
+    end
+
+    plt.legend()
+    plt.show()
+    plt.savefig(path*"/"*"figure.png")
+    plt.close(fig)
+end
+
 function main()
     plotPerformances()
     #plotRatioMIP()
