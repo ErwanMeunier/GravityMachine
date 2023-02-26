@@ -41,8 +41,8 @@ function Δ2SPAbis(A::Array{Int,2}, xTilde::Array{Int,1},
     nbvar = size(A,2)
     idxTilde0, idxTilde1 = split01(xTilde)
 
-    #cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
-    cλ = fill(1.,length(xTilde))
+    cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
+    #cλ = fill(1.,length(xTilde))
     #cλ = 1.0 .+ α.*(λ1[k].*c1 + λ2[k].*c2  .-1)
     #println("cλ :", cλ)
     proj = Model(GLPK.Optimizer)
@@ -156,7 +156,7 @@ function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1},
     optimize!(proj)
 
     xOutput = value.(x)
-    [set_binary(projInt[:x][i]) for i=1:length(xTilde) if !(isapprox(xOutput[i],0,atol=10^-3)||isapprox(xOutput[i],1,atol=10^-3))]
+    [set_binary(proj[:x][i]) for i=1:length(xTilde) if !(isapprox(xOutput[i],0,atol=10^-3)||isapprox(xOutput[i],1,atol=10^-3))]
     optimize!(proj)
 
     return objective_value(proj), value.(x)

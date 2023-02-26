@@ -23,7 +23,11 @@ function computeLinearRelax2SPA(  nbvar::Int,
   return objective_value(model), value.(x)
 end
 
-function computeLinearRelax2SPAInt(  nbvar::Int,
+#= Compute the Linear Relaxation on 2SPA, fixing one objective function. Uses an ϵ-constraint enventually. This version forces post-optimization variables
+being integer. The user must be aware of possible "communicating vessels" between a posteriori non-integer and integer variables. More precisely, previously non-integer
+variables may become non-integer variables after the second call of optimizer.
+ =#
+function computeLinearRelax2SPAInt(  nbvar::Int, 
   nbctr::Int,
   A::Array{Int,2},
   c1::Array{Int,1},

@@ -4,9 +4,9 @@
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
 const verbose = false
-const graphic = false
-const slowexec = false
-const slowtime = 0
+const graphic = true
+const slowexec = true
+const slowtime = 1
 
 verbose ? println("-) Active les packages requis\n") : nothing
 using JuMP, GLPK, PyPlot, Printf, Random
@@ -290,6 +290,36 @@ function selectionPoints(vg::Vector{tGenerateur}, k::Int64)
 end
 
 # ==============================================================================
+# Forces non-integers variables to be integer. Integer variables may become
+
+function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int})
+
+    nbvar::Int = size(A,2)
+    nbctr::Int = size(A,1)
+
+    for k in eachindex(vg)
+        cλ::Vector{Float64} = (1+(λ1[k]-1)).*c1 + (1+(λ2[k]-1)).*c2
+
+        model::Model = Model(GLPK.Optimizer)
+        @variable(model, 0<=x[1:nbvar]<=1)
+        @objective(model, Min, sum(cλ[j]*x[j] for j in 1:nbvar))
+        @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
+        # The new solution must be dominated by the "former generator"
+        @expression(model, obj1, sum(c1[j]*x[j] for j in 1:nbvar)) # first objective 
+        @expression(model, obj2, sum(c2[j]*x[j] for j in 1:nbvar)) # second objective
+        @constraint(model, obj1 >= vg[k].sRel.y[1]) # make a freehand figure and trust your intuition... TODO
+        @constraint(model, obj2 >= vg[k].sRel.y[2])
+        #---
+        [set_binary(model[:x][i]) for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0,atol=10^-3)||isapprox(vg[k].sRel.x[i],1,atol=10^-3))]
+        
+        optimize!(model)
+
+        vg[k].sRel.x = value.(x)
+        vg[k].sRel.y[1], vg[k].sRel.y[2] = evaluerSolution(vg[k].sRel.x,c1,c2)
+    end
+end
+
+# ==============================================================================
 # point d'entree principal
 
 function GM( fname::String,
@@ -337,7 +367,7 @@ function GM( fname::String,
     # --------------------------------------------------------------------------
     # allocation de memoire pour la structure de donnees -----------------------
 
-    vg = allocateDatastructure(nbgen, nbvar, nbobj)
+    vg::Vector{tGenerateur} = allocateDatastructure(nbgen, nbvar, nbobj)
 
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
@@ -392,8 +422,10 @@ function GM( fname::String,
     # --------------------------------------------------------------------------
     # calcule les directions (λ1,λ2) pour chaque generateur a utiliser lors des projections
     λ1,λ2 = calculerDirections2(L,vg)
-
     # ==========================================================================
+    println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
+
+    transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
 
     @printf("4) terraformation generateur par generateur \n\n")
     labelInt = 1 # graphical purpose
@@ -413,7 +445,7 @@ function GM( fname::String,
         trial = 0
         H = Set{Vector{Int64}}()
 
-#perturbSolution30!(vg,k,c1,c2,d)
+        #perturbSolution30!(vg,k,c1,c2,d)
 
         # rounding solution : met a jour sInt dans vg --------------------------
         #roundingSolution!(vg,k,c1,c2,d)  # un cone
@@ -592,10 +624,10 @@ end
 
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
-@time GM("sppnw10.txt", 6, 20, 20)
+#@time GM("sppnw10.txt", 6, 20, 20)
 #@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
-#@time GM("sppnw30.txt", 6, 20, 20)
+@time GM("sppnw30.txt", 6, 20, 20)
 #@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)

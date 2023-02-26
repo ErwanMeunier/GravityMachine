@@ -8,7 +8,7 @@ end
 
 # type corresponding to a point generator
 mutable struct tGenerateur
-    sRel :: tSolution{Float64}    # initial relaxed solution
+    sRel :: tSolution{Float64}    # initial relaxation
     sInt :: tSolution{Int64}      # integer solution
     sPrj :: tSolution{Float64}    # projected solution
     sFea :: Bool                  # indicate if sInt is feasible or not
@@ -40,12 +40,13 @@ function allocateDatastructure(nbgen::Int64, nbvar::Int64, nbobj::Int64)
 
     verbose ? println("\n  → Allocation memoire pour ",nbgen," generateurs\n") : nothing
 
-    vg = Vector{tGenerateur}(undef, nbgen)
+    vg::Vector{tGenerateur} = Vector{tGenerateur}(undef, nbgen)
     for k = 1:nbgen
-        vg[k] = tGenerateur( tSolution{Float64}(zeros(Float64,nbvar),zeros(Float64,nbobj)),
-                              tSolution{Int64}(zeros(Int64,nbvar),zeros(Int64,nbobj)),
-                              tSolution{Float64}(zeros(Float64,nbvar),zeros(Float64,nbobj)),
-                              false
+        vg[k] = tGenerateur(
+                            tSolution{Float64}(zeros(Float64,nbvar),zeros(Float64,nbobj)),
+                            tSolution{Int64}(zeros(Int64,nbvar),zeros(Int64,nbobj)),
+                            tSolution{Float64}(zeros(Float64,nbvar),zeros(Float64,nbobj)),
+                            false
                             )
     end
     return vg
