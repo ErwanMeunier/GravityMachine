@@ -5,6 +5,7 @@ import PyPlot
 const plt = PyPlot
 plt.pygui(true)
 const path = "./results/"
+const pathPP = "./performanceProfile/"
 const fields = [:Quality, 
                 :Number_Of_Cycles, 
                 :Max_Number_Of_Cycles, 
@@ -16,8 +17,21 @@ const fields = [:Quality,
                 :Nb_of_maxTrials_reached
                 ]
 const pathRatio = "./RatioBeforeAfter/"
+
+
+const fieldsAndCorrespondingOrderFunction = Dict{Symbol,Function}( # used in performanceProfile
+                                                                    :Quality => maximum,
+                                                                    :Number_Of_Cycles => minimum, 
+                                                                    :Max_Number_Of_Cycles => minimum, 
+                                                                    :Total_number_of_nd_points => maximum, 
+                                                                    :Total_number_of_nd_points_found_by_GM => maximum,
+                                                                    :Time => minimum,
+                                                                    :Nb_of_feasible_points_found => maximum,
+                                                                    :Nb_of_maxTime_reached => minimum,
+                                                                    :Nb_of_maxTrials_reached => minimum
+                                                                 )
 #=
-If characteristicBis is null only the values for the fiven characteristic is given, 
+If characteristicBis is null only the values for the given characteristic is given, 
 the ratio of characteristic/characteristicBis is ploted otherwise.
 =#
 function plotQualities(filename::String, characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"resultRef.csv")
@@ -120,42 +134,71 @@ end
 
 #= From: https://link.springer.com/article/10.1007/s101070100263
 Each subarray of data is a flavour of Gravity Machine. The lengths of names and data must be same.
+The data must represents the same metric to be compared with each other.
 =#
-function performanceProfile(data::Vector{Vector{Float64}}, names::Vector{String})
+function performanceProfile(data::Vector{Vector{Float64}}, names::Vector{String}, title::String, operator::Function)
+    
+    ρs(τ::Float64, P::Vector{Float64}) = length([true for rps in P if rps <= τ])/length(P) # function as defined in the article
+    
     @assert (length(data)==length(names)) "The number of names does not match the number of solvers"
-    path = "./performanceProfile"
 
+    ns = length(data) # number of solvers
+    nbInst = length(data[1]) # number of instances
+    bestValues = [operator(dataForOnesolver) for dataForOnesolver in data]
+    ratios::Vector{Vector{Float64}} = [collect(map(x-> (bestValues[s]==0. ? 0.0 : x/bestValues[s]),data[s])) for s in 1:ns]
+    τrange = sort(unique(Iterators.flatten(ratios))) # all ratio can be captured
+    rMax::Float64 = maximum([maximum(setOfRatios) for setOfRatios in ratios])
+    println("rMax =", rMax)
+    #τrange = range(start=0,stop=rMax,length=length(data[1])) # TODO: Can we be better?
+    yaxis::Vector{Vector{Float64}} = [[ρs(τ, setOfRatios) for τ in τrange] for setOfRatios in ratios]
+
+    fig, ax = plt.subplots()
+    fig.set_dpi(300)
+    fig.set_size_inches(20.,13.)
+    plt.title(title)
+
+    for s in eachindex(ratios)
+        plt.plot(τrange,yaxis[s],label=names[s])
+    end
+
+    plt.legend()
+    plt.show()
+    plt.savefig(pathPP*title*".png")
+    plt.close(fig)
+end
+
+function performanceProfileFromRaw()
     try 
-        mkdir("performanceProfile")
+        mkdir(pathPP)
     catch e;
-        if e.code == -17
-            println("WARNING: The figures directory"*path*"already exists. Existing figures will be erased.")
+        if e.code == -17 # The directory already exists
+            println("WARNING: The figures directory"*pathPP*"already exists. Existing figures will be erased.")
         else
             println("Error not handled")
             rethrow()
         end
     end
+    
+    files::Vector{String} = [file for file in readdir("./results/";join=true) if file[end-3:end]==".csv"] # CSV files
+    names::Vector{String} = [file[1:end-4] for file in readdir("./results/") if file[end-3:end]==".csv"]
+    mixedData::Vector{DataFrame} = [DataFrame(CSV.File(file)) for file in files]
+    #println(mixedData)
 
-    ns = length(data) # number of solvers
-    nbInst = length(data[1]) # number of instances
-    bestValues = [maximum(dataForOnesolver) for dataForOnesolver in data]
-    cumulatedRatios = [collect(cumsum(map(x->x/bestValues[s],data[s]))) for s in 1:ns]
-
-    fig, ax = plt.subplots()
-
-    for s in eachindex(cumulatedRatios)
-        plt.plot(1:nbInst,cumulatedRatios[s],label=names[s])
+    for metric in fields
+        try 
+            data::Vector{Vector{Float64}} = [convert(Vector{Float64}, df[!,metric]) for df in mixedData]
+            title = string(metric)
+            performanceProfile(data,names,title, fieldsAndCorrespondingOrderFunction[metric])
+        catch ArgumentError;
+                println("[WARNING] The following metric has been ignored : "*string(metric))
+        end
     end
-
-    plt.legend()
-    plt.show()
-    plt.savefig(path*"/"*"figure.png")
-    plt.close(fig)
 end
 
 function main()
-    plotPerformances()
+    #plotPerformances()
     #plotRatioMIP()
+    performanceProfileFromRaw()
 end
 
-#main()
+main()
