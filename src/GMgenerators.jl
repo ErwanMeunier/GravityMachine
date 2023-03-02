@@ -2,12 +2,11 @@
 # Nettoyage des valeurs des variables d'une solution x relachee sur [0,1]
 
 function nettoyageSolution!(x::Vector{Float64})
-    # TODO : using isapprox function could be better
     nbvar=length(x)
     for i in 1:nbvar
-        if     round(x[i], digits=3) == 0.0 #wsh la zone
+        if     isapprox(x[i],0;atol=10^-3)
                    x[i] = 0.0
-        elseif round(x[i], digits=3) == 1.0
+        elseif isapprox(x[i],1;atol=10^-3)
                    x[i] = 1.0
         else
                    x[i] = round(x[i], digits=3)
@@ -37,7 +36,7 @@ function calculGenerateurs(A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1},
     pasSample1 = (maxf1RL-minf1RL) / (tailleSampling-1) # pas de l'echantillonage sur z1
     j2 = 1
 
-    alternance = 1
+    alternance = 1 # before it was 1 IMPROVEMENT
     maxf2RLlimite = maxf2RL
     minf2RLlimite = minf2RL
 

@@ -3,10 +3,16 @@
 
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
-const verbose = false
+const verbose = true
 const graphic = true
-const slowexec = true
+
+# Display dinamically (step-by-step) the inner operations of gravity machine 
+const slowexec = false
 const slowtime = 1
+# ---
+
+const plotGenerators = true
+global generateurVisualise = -1
 
 verbose ? println("-) Active les packages requis\n") : nothing
 using JuMP, GLPK, PyPlot, Printf, Random
@@ -14,7 +20,7 @@ verbose ? println("  Fait \n") : nothing
 
 
 graphic ? (println("-) Mise en place de l'affichage\n") ; pygui(true); println(" Fait \n")) : nothing
-generateurVisualise = -1
+
 
 # ==============================================================================
 
@@ -315,7 +321,15 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
         optimize!(model)
 
         vg[k].sRel.x = value.(x)
+        
+        arrowBaseX = vg[k].sRel.y[1] # graphic
+        arrowBaseY = vg[k].sRel.y[2] # graphic
+
         vg[k].sRel.y[1], vg[k].sRel.y[2] = evaluerSolution(vg[k].sRel.x,c1,c2)
+        
+        dX = vg[k].sRel.y[1] - arrowBaseX # graphic
+        dY = vg[k].sRel.y[2] - arrowBaseY # graphic  
+        graphic ? arrow(arrowBaseX, arrowBaseY, dX, dY, color="fuchsia") : nothing # graphic
     end
 end
 
@@ -339,8 +353,8 @@ function GM( fname::String,
     nbvar = size(A,2)
     nbobj = 2
 
-    # structure pour les points qui apparaitront dans l'affichage graphique
-    d = tListDisplay([],[], [],[], [],[], [],[], [],[], [],[], [],[])
+    # structure pour les points qui apparaitront dans l'affichage graphique [],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]
+    d::tListDisplay = tListDisplay([Vector{tSolution}() for k in 1:16]...)
 
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
@@ -354,8 +368,8 @@ function GM( fname::String,
     f2RL, xf2RL = computeLinearRelax2SPA(nbvar, nbctr, A, c1, c2, typemax(Int), 2) # opt fct 2
     maxf1RL, minf2RL = evaluerSolution(xf2RL, c1, c2)
 
-    verbose ? @printf("  f1_min=%8.2f ↔ f1_max=%8.2f (Δ=%.2f) \n",minf1RL, maxf1RL, maxf1RL-minf1RL) : nothing
-    verbose ? @printf("  f2_min=%8.2f ↔ f2_max=%8.2f (Δ=%.2f) \n\n",minf2RL, maxf2RL, maxf2RL-minf2RL) : nothing
+    verbose ? @printf("  f1_min=%8.2f ↔ f1_max=%8.2f (Δ=%.2f) \n", minf1RL, maxf1RL, maxf1RL-minf1RL) : nothing
+    verbose ? @printf("  f2_min=%8.2f ↔ f2_max=%8.2f (Δ=%.2f) \n\n", minf2RL, maxf2RL, maxf2RL-minf2RL) : nothing
 
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
@@ -383,7 +397,7 @@ function GM( fname::String,
 
         # copie de l'ensemble bornant inferieur dans la stru de donnees iterative ---
         ajouterX0!(vg, k, L[k])
-
+        generateurVisualise = plotGenerators ? k : -1
         # test d'admissibilite et marquage de la solution le cas echeant -------
         if estAdmissible(vg[k].sRel.x)
             ajouterXtilde!(vg, k, convert.(Int, vg[k].sRel.x), convert.(Int, L[k].y))
@@ -427,6 +441,12 @@ function GM( fname::String,
 
     transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
 
+    #d.xLf1Improved = [vg[k].sRel.x[1] for k in eachindex(vg)] ;  d.yLf1Improved # liste des points (x,y) relaches améliorés #Recent improvement
+    #d.xLf2Improved = [] ;  d.yLf2Improved # liste des points (x,y) relaches améliorés #Recent improvement 
+    d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
+
+    improvedNadir::tPoint = tPoint(vg[end].sRel.y[1],vg[1].sRel.y[2]) 
+
     @printf("4) terraformation generateur par generateur \n\n")
     labelInt = 1 # graphical purpose
     #--- Number of trials allowed
@@ -458,7 +478,7 @@ function GM( fname::String,
         labelInt += 1
         dX = vg[k].sInt.y[1] - arrowBaseX
         dY = vg[k].sInt.y[2] - arrowBaseY
-        graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="blue",label=string(labelInt)) : nothing
+        graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="blue") : nothing
         slowexec ? sleep(slowtime) : nothing
         # => Only floating point value are modified so splitByType does have style a sense
         push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
@@ -479,7 +499,7 @@ function GM( fname::String,
             labelInt += 1
             dX = vg[k].sPrj.y[1] - arrowBaseX
             dY = vg[k].sPrj.y[2] - arrowBaseY
-            graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange",label=string(labelInt)) : nothing
+            graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="red",label=string(labelInt)) : nothing
             slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
@@ -494,7 +514,7 @@ function GM( fname::String,
                 labelInt+=1
                 dX = vg[k].sInt.y[1] - arrowBaseX
                 dY = vg[k].sInt.y[2] - arrowBaseY 
-                graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="red",label=string(labelInt)) : nothing
+                graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange",label=string(labelInt)) : nothing
                 slowexec ? sleep(slowtime) : nothing
                 println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
@@ -567,9 +587,22 @@ function GM( fname::String,
     graphic ? xlabel(L"z^1(x)") : nothing
     graphic ? ylabel(L"z^2(x)") : nothing
     # Donne les points relaches initiaux ---------------------------------------
-    graphic ? scatter(d.xLf1,d.yLf1,color="blue", marker="x") : nothing
-    graphic ? scatter(d.xLf2,d.yLf2,color="red", marker="+") : nothing
-    graphic ? scatter(d.xL,d.yL,color="blue", marker="x", label = L"y \in L") : nothing
+    
+    #graphic ? scatter(d.xLf1,d.yLf1,color="green", marker="p") : nothing # generators found considering an ϵ-constraint on f1
+    #graphic ? scatter(d.xLf2,d.yLf2,color="pink", marker="p") : nothing # generators found considering an ϵ-constraint on f2
+    graphic ? scatter(d.xL,d.yL,color="blue", marker="+", label = L"y \in L") : nothing
+    graphic ? scatter(d.xLImproved,d.yLImproved, color="fuchsia", marker=".",label = "Improved generators", lw = 2) : nothing
+    # Donne le nadir global  ---------------------------------------------------
+    # Des générateurs non améliorés
+    println(d.xL)
+    println(d.yL)
+    println(d.xLImproved)
+    println(d.yLImproved)
+    graphic ? scatter([L[end].y[1]],[L[1].y[2]],color="blue",marker="*", label = "Non-improved Nadir", lw = 2) : nothing
+    # Des générateurs améliorés
+    graphic ? scatter([improvedNadir.x],[improvedNadir.y],color="fuchsia",marker="*", label = "Improved Nadir", lw = 2) : nothing
+    
+    println("Both nadirs points are "*(globalNadir==improvedNadir ? "equal" : "different"))
 
     # Donne les points entiers -------------------------------------------------
     graphic ? scatter(d.XInt,d.YInt,color="orange", marker="s", label = L"y"*" rounded") : nothing
@@ -627,8 +660,8 @@ end
 #@time GM("sppnw10.txt", 6, 20, 20)
 #@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
-@time GM("sppnw30.txt", 6, 20, 20)
-#@time GM("sppnw40.txt", 6, 20, 20)
+#@time GM("sppnw30.txt", 6, 20, 20)
+@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)
 #nothing

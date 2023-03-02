@@ -1,3 +1,4 @@
+import Base.== # to allow the extention of this method for tPoint
 # types ------------------------------------------------------------------------
 
 # type corresponding to a solution
@@ -20,12 +21,21 @@ mutable struct tPoint
     y :: Float64
 end
 
+function ==(a::tPoint, b::tPoint) # Extending equality relation for the tPoint
+    return (a.x == b.x) && (a.y == b.y)
+end
 
 # type grouping the lists of points for dysplaying purposes
 mutable struct tListDisplay
-    xLf1  :: Vector{Float64};  yLf1  :: Vector{Float64} # liste des points (x,y) relaches
-    xLf2  :: Vector{Float64};  yLf2  :: Vector{Float64} # liste des points (x,y) relaches
+    # generators found considering an ϵ-constraint on f1
+    xLf1  :: Vector{Float64};  yLf1  :: Vector{Float64} # liste des points (x,y) relaches -> Sur f1 pendant la génération par ϵ-contraintes
+    # generators found considering an ϵ-constraint on f2
+    xLf2  :: Vector{Float64};  yLf2  :: Vector{Float64} # liste des points (x,y) relaches -> Sur f2 pendant la génération par ϵ-contraintes
+    # All the generators
     xL    :: Vector{Float64};  yL    :: Vector{Float64} # liste des points (x,y) relaches
+    #xLf1Improved :: Vector{Float64};  yLf1Improved  :: Vector{Float64} # liste des points (x,y) relaches améliorés #Recent improvement
+    #xLf2Improved  :: Vector{Float64};  yLf2Improved  :: Vector{Float64} # liste des points (x,y) relaches améliorés #Recent improvement 
+    xLImproved   :: Vector{Float64};  yLImproved    :: Vector{Float64} # liste des points (x,y) relaches améliorés #Recent improvement
     XInt  :: Vector{Int64};    YInt  :: Vector{Int64}   # liste des points (x,y) entiers
     XProj :: Vector{Float64};  YProj :: Vector{Float64} # liste des points (x,y) projetes
     XFeas :: Vector{Int64};    YFeas :: Vector{Int64}   # liste des points (x,y) admissibles

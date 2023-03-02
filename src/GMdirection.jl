@@ -58,7 +58,7 @@ function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateu
          @printf("  xm= %7.2f   ym= %7.2f ",xm,ym)
          @printf("  Δx= %8.2f    Δy= %8.2f ",Δx,Δy)
          @printf("  λ1= %6.5f    λ2= %6.5f \n",λ1[k],λ2[k])
-         if generateurVisualise == -1 
+         #=if generateurVisualise == -1 
              # affichage pour tous les generateurs
             graphic ? plot(n1, n2, xm, ym, linestyle="-", color="blue", marker="+") : nothing
             #=graphic ? annotate("",k,
@@ -72,7 +72,8 @@ function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateu
                       xy=[xm;ym],# Arrow tip
                       xytext=[n1;n2], # Text offset from tip
                       arrowprops=Dict("arrowstyle"=>"->")) : nothing  
-         end 
+         end
+         =#
          #println("")
      end
      return λ1, λ2
@@ -131,7 +132,7 @@ function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateu
          @printf("  xm= %7.2f   ym= %7.2f ",xm,ym)
          @printf("  Δx= %8.2f    Δy= %8.2f ",Δx,Δy)
          @printf("  λ1= %6.5f    λ2= %6.5f \n",λ1[k],λ2[k])
-         if generateurVisualise == -1 
+         #=if generateurVisualise == -1 
              # affichage pour tous les generateurs
              graphic ? plot(n1, n2, xm, ym, linestyle="-", color="blue", marker="+") : nothing
              graphic ? annotate("",
@@ -145,7 +146,7 @@ function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateu
                       xy=[xm;ym],# Arrow tip
                       xytext=[n1;n2], # Text offset from tip
                       arrowprops=Dict("arrowstyle"=>"->")) : nothing
-         end 
+         end =#
      end
      return λ1, λ2
  end
@@ -176,7 +177,7 @@ function calculerDirections4(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
         @printf("  xm= %7.2f   ym= %7.2f ",xm,ym)
         @printf("  Δx= %8.2f    Δy= %8.2f ",Δx,Δy)
         @printf("  λ1= %6.5f    λ2= %6.5f \n",λ1[k],λ2[k])
-        if generateurVisualise == -1 
+        #=if generateurVisualise == -1 
             # affichage pour tous les generateurs
             graphic ? plot(n1, n2, xm, ym, linestyle="-", color="blue", marker="+") : nothing
             graphic ? annotate("",k,
@@ -190,7 +191,7 @@ function calculerDirections4(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
                     xy=[xm;ym],# Arrow tip
                     xytext=[n1;n2], # Text offset from tip
                     arrowprops=Dict("arrowstyle"=>"->")) : nothing  
-        end 
+        end=#
          #println("")
     end
     return λ1, λ2
