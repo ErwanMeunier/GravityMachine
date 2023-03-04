@@ -1,4 +1,5 @@
 # ==============================================================================
+
 # arrondi la solution correspondant au generateur (pas d'historique donc)
 # version avec cone inferieur seulement
 function roundingSolution!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, d::tListDisplay)
@@ -322,4 +323,14 @@ function roundingSolutionNew23!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int
         push!(d.YInt,vg[k].sInt.y[2])
     end      
 
+end
+
+const configurationRounding::Dict{Int,Function} = Dict{Int,Function}(
+                                                                1 => roundingSolution!,
+                                                                2 => roundingSolutionNew23!,
+                                                                3 => roundingSolutionnew24!
+                                                            )
+
+function interface_roundingSolution!(vg::Vector{tGenerateur},k::Int64,c1::Vector{Int},c2::Vector{Int},d::tListDisplay,CHOICE::Int64)
+    return configurationRounding[CHOICE](vg,k,c1,c2,d)
 end

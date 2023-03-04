@@ -7,12 +7,14 @@ const verbose = true
 const graphic = true
 
 # Display dinamically (step-by-step) the inner operations of gravity machine 
-const slowexec = false
+const slowexec = true
 const slowtime = 1
 # ---
 
 const plotGenerators = true
 global generateurVisualise = -1
+
+const CHOICE_ROUNDING = 1 # FROM 1 TO 3
 
 verbose ? println("-) Active les packages requis\n") : nothing
 using JuMP, GLPK, PyPlot, Printf, Random
@@ -123,7 +125,7 @@ function estAdmissible(x::Vector{Float64})
     admissible = true
     i=1
     while admissible && i<=length(x)
-        if round(x[i], digits=3)!=0.0 && round(x[i], digits=3)!=1.0
+        if !isapprox(x[i], 0.0; atol=10^-3) && !isapprox(x[i],1.0;atol=10^-3)
             admissible = false
         end
         i+=1
@@ -142,7 +144,7 @@ function evaluerSolution(x::Vector{Float64}, c1::Array{Int,1}, c2::Array{Int,1})
         z1 += x[i] * c1[i]
         z2 += x[i] * c2[i]
     end
-    return round(z1, digits=2), round(z2, digits=2)
+    return round(z1, digits=3), round(z2, digits=3)
 end
 
 # ==============================================================================
@@ -330,6 +332,7 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
         dX = vg[k].sRel.y[1] - arrowBaseX # graphic
         dY = vg[k].sRel.y[2] - arrowBaseY # graphic  
         graphic ? arrow(arrowBaseX, arrowBaseY, dX, dY, color="fuchsia") : nothing # graphic
+        println("Admissibilité du générateur amélioré ",k," : ",estAdmissible(vg[k].sRel.x))
     end
 end
 
@@ -391,16 +394,28 @@ function GM( fname::String,
     nbcyclestotal = 0
     nbcyclesMax = 0
 
+    [ajouterX0!(vg, k, L[k]) for k =1:nbgen]
+
+    λ1,λ2 = calculerDirections2(L,vg)
+    # ==========================================================================
+    println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
+        
+    transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
+
+
     for k=1:nbgen
 
         verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, L[k].y[1], L[k].y[2]) : nothing
 
         # copie de l'ensemble bornant inferieur dans la stru de donnees iterative ---
-        ajouterX0!(vg, k, L[k])
+        #ajouterX0!(vg, k, L[k])
         generateurVisualise = plotGenerators ? k : -1
+
+        #function ajouterXtilde!(vg::Vector{tGenerateur}, k::Int64, x::Vector{Int64}, y::Vector{Int64})
+
         # test d'admissibilite et marquage de la solution le cas echeant -------
         if estAdmissible(vg[k].sRel.x)
-            ajouterXtilde!(vg, k, convert.(Int, vg[k].sRel.x), convert.(Int, L[k].y))
+            ajouterXtilde!(vg, k, convert.(Int, round.(vg[k].sRel.x,digits=0)), convert.(Int, round.(L[k].y,digits=0)))
             vg[k].sFea   = true
             verbose ? @printf("→ Admissible \n") : nothing
             # archive le point obtenu pour les besoins d'affichage    
@@ -435,11 +450,7 @@ function GM( fname::String,
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
     # calcule les directions (λ1,λ2) pour chaque generateur a utiliser lors des projections
-    λ1,λ2 = calculerDirections2(L,vg)
-    # ==========================================================================
-    println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
-
-    transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
+    
 
     #d.xLf1Improved = [vg[k].sRel.x[1] for k in eachindex(vg)] ;  d.yLf1Improved # liste des points (x,y) relaches améliorés #Recent improvement
     #d.xLf2Improved = [] ;  d.yLf2Improved # liste des points (x,y) relaches améliorés #Recent improvement 
@@ -460,10 +471,11 @@ function GM( fname::String,
     nbFeasible = 0
     nbMaxTrials = 0
     nbMaxTime = 0
+    H = Set{Vector{Int64}}()
     for k in [i for i in 1:nbgen if !isFeasible(vg,i)] # ORIGINAL: for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
         temps = time()
         trial = 0
-        H = Set{Vector{Int64}}()
+        
 
         #perturbSolution30!(vg,k,c1,c2,d)
 
@@ -474,14 +486,14 @@ function GM( fname::String,
 
         arrowBaseX = vg[k].sRel.y[1] # graphic
         arrowBaseY = vg[k].sRel.y[2] # graphic
-        roundingSolutionNew23!(vg,k,c1,c2,d) # un cone et LS sur generateur
+        interface_roundingSolution!(vg,k,c1,c2,d,CHOICE_ROUNDING) # un cone et LS sur generateur
         labelInt += 1
         dX = vg[k].sInt.y[1] - arrowBaseX
         dY = vg[k].sInt.y[2] - arrowBaseY
-        graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="blue") : nothing
+        graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange") : nothing
         slowexec ? sleep(slowtime) : nothing
         # => Only floating point value are modified so splitByType does have style a sense
-        push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
+        #push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
         verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
         nbcycles = 0
         while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
@@ -499,10 +511,12 @@ function GM( fname::String,
             labelInt += 1
             dX = vg[k].sPrj.y[1] - arrowBaseX
             dY = vg[k].sPrj.y[2] - arrowBaseY
-            graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="red",label=string(labelInt)) : nothing
+            graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="red") : nothing
             slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
-
+            push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
+            println(H)
+            #if isFeasible(vg,k) && 
             if !isFeasible(vg,k)
 
                 # rounding solution : met a jour sInt dans vg --------------------------
@@ -510,11 +524,11 @@ function GM( fname::String,
                 #roundingSolutionnew24!(vg,k,c1,c2,d)
                 arrowBaseX = vg[k].sPrj.y[1] # graphic
                 arrowBaseY = vg[k].sPrj.y[2]
-                roundingSolutionNew23!(vg,k,c1,c2,d) # graphic
+                interface_roundingSolution!(vg,k,c1,c2,d,CHOICE_ROUNDING) # graphic
                 labelInt+=1
                 dX = vg[k].sInt.y[1] - arrowBaseX
                 dY = vg[k].sInt.y[2] - arrowBaseY 
-                graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange",label=string(labelInt)) : nothing
+                graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange") : nothing
                 slowexec ? sleep(slowtime) : nothing
                 println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
@@ -535,6 +549,7 @@ function GM( fname::String,
                     #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                 end
                 push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
+                println(H)
             end
         end
         nbcyclestotal += nbcycles
@@ -657,11 +672,11 @@ end
 
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
-#@time GM("sppnw10.txt", 6, 20, 20)
+@time GM("sppnw10.txt", 6, 20, 20)
 #@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
 #@time GM("sppnw30.txt", 6, 20, 20)
-@time GM("sppnw40.txt", 6, 20, 20)
+#@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)
 #nothing
