@@ -1,4 +1,5 @@
 # Tools
+
 # ==============================================================================
 # Self-explanatory
 function computeLocalNadirs(vg::Vector{tGenerateur}, L::Vector{tSolution{Float64}})::Vector{tPoint}
@@ -12,7 +13,18 @@ function computeLocalNadirs(vg::Vector{tGenerateur}, L::Vector{tSolution{Float64
     return nadirs
 end
 
-# ==============================================================================
+
+# ==============================PROJECTION METHODS======================= 
+#=
+Any new projection method must fill the following specifications:
+- Their arguments follow the order of the method with the larger number of arguments i.e. (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, etc)
+- The method is referenced in the mapping "configurationProjection::Dict{Int,Tuple{Function,Int}}"
+- The field of integer type is dedicated to the NUMBER OF ARGUMENTS needed for the added method
+- TODO
+=#
+# =======================================================================
+
+
 # Projete xTilde sur le polyedre X du SPA avec norme-L1
 # version FP 2005
 
@@ -116,30 +128,6 @@ function Δ2SPAbisCone(L::Vector{tSolution{Float64}} ,A::Array{Int,2}, xTilde::A
     return objective_value(proj), value.(x)
 end
 
-function Δ2SPAbisKeepInt(A::Array{Int,2}, xTilde::Array{Int,1}, 
-    c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, protectedIndexOfInt::Vector{Int64}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
-
-    nbctr = size(A,1)
-    nbvar = size(A,2)
-    idxTilde0, idxTilde1 = split01(xTilde)
-    # α = 1
-    #cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
-    #cλ = 1.0 .+ α.*(λ1[k].*c1 + λ2[k].*c2  .-1)
-    #println("cλ :", cλ)
-    proj = Model(GLPK.Optimizer)
-    @variable(proj, 0.0 <= x[1:length(xTilde)] <= 1.0)
-    #    @objective(proj, Min, sum(λ1[k]*x[i] for i in idxTilde0) + sum(λ2[k]*(1-x[i]) for i in idxTilde1) )
-    #@objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1))
-    @objective(proj, Min, sum(x[i] for i in idxTilde0) + sum((1-x[i]) for i in idxTilde1)) 
-    @constraint(proj, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
-    # Protecting components which are still integer
-    @constraint(proj, [i in protectedIndexOfInt], x[i]==xTilde[i])
-    
-    #
-    optimize!(proj)
-    return objective_value(proj), value.(x)
-end
-
 function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1}, 
     c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64=1.)
 
@@ -172,9 +160,9 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
 
     # --------------------------------------------------------------------------
     # Projete la solution entiere sur le polytope X 
-    #generalNadir = fill(tPoint(L[end].y[1],L[1].y[2]),length(vg))
-    nadirs = computeLocalNadirs(vg,L)
-    λ1,λ2 = calculerDirections2(L,vg)
+    # generalNadir = fill(tPoint(L[end].y[1],L[1].y[2]),length(vg))
+    # nadirs = computeLocalNadirs(vg,L)
+    # λ1,λ2 = calculerDirections2(L,vg)
     #fPrj, vg[k].sPrj.x = Δ2SPA(A,vg[k].sInt.x)
     #fPrj, vg[k].sPrj.x = Δ2SPAbisCone(L,A,vg[k].sInt.x,c1,c2,k,λ1,λ2,nadirs,vg,α,β)
 
@@ -230,4 +218,16 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
         # prepare pour l'iteration suivante
 #        vg[k].xRlx = deepcopy(vg[k].sPrj.x) !!!!!!!!!!!!!
     end
+end
+
+const configurationProjection::Dict{Int,Function} = Dict{Int,Tuple{Function,Int}}(
+                                                                1 => (ΔSPA,2), # (A::Array{Int,2}, xTilde::Array{Int,1})
+                                                                2 => (Δ2SPAbis,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+                                                                3 => (Δ2SPAbisCone,11), # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, β::Float64)
+                                                                4 => (Δ2SPABelgique,8) # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+                                                            )
+
+function interface_projection!(A::Array{Int,2},xTilde::Vector{Int},args::Vararg{Any};CHOICE::Int=4) 
+    @assert configurationProjection[CHOICE][2] == 2 + length(args) "Bad number of arguments for such a projection"
+    return configurationProjection[CHOICE][1](A,xTilde,args...)
 end

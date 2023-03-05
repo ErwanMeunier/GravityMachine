@@ -325,12 +325,14 @@ function roundingSolutionNew23!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int
 
 end
 
+#------------------------------------------------------------------------------------------------------------------------------------
+
 const configurationRounding::Dict{Int,Function} = Dict{Int,Function}(
                                                                 1 => roundingSolution!,
                                                                 2 => roundingSolutionNew23!,
                                                                 3 => roundingSolutionnew24!
                                                             )
 
-function interface_roundingSolution!(vg::Vector{tGenerateur},k::Int64,c1::Vector{Int},c2::Vector{Int},d::tListDisplay,CHOICE::Int64)
+function interface_roundingSolution!(vg::Vector{tGenerateur},k::Int64,c1::Vector{Int},c2::Vector{Int},d::tListDisplay;CHOICE::Int=2)
     return configurationRounding[CHOICE](vg,k,c1,c2,d)
 end
