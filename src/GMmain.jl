@@ -16,6 +16,7 @@ global generateurVisualise = -1
 
 global CHOICE_ROUNDING = 1 # FROM 1 TO 3
 global CHOICE_PROJECTION = 4 # FROM 1 TO 4
+global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 
 verbose ? println("-) Active les packages requis\n") : nothing
 using JuMP, GLPK, PyPlot, Printf, Random
@@ -121,10 +122,10 @@ end
 # test si une solution est admissible en verifiant si sa relaxation lineaire
 # conduit a une solution entiere
 
-function estAdmissible(x::Vector{Float64})
+function estAdmissible(x::Vector{Float64})::Bool
 
-    admissible = true
-    i=1
+    admissible::Bool = true
+    i::Int=1
     while admissible && i<=length(x)
         if !isapprox(x[i], 0.0; atol=10^-3) && !isapprox(x[i],1.0;atol=10^-3)
             admissible = false
@@ -147,6 +148,24 @@ function evaluerSolution(x::Vector{Float64}, c1::Array{Int,1}, c2::Array{Int,1})
     end
     return round(z1, digits=3), round(z2, digits=3)
 end
+
+# ==============================================================================
+# Nettoyage des valeurs des variables d'une solution x relachee sur [0,1]
+
+function nettoyageSolution!(x::Vector{Float64})
+    # TODO : using isapprox function could be better
+    nbvar::Int = length(x)
+    for i in 1:nbvar
+        if     isapprox(x[i],0.,atol=10^-3)
+                   x[i] = 0.0
+        elseif isapprox(x[i],1.,atol=10^-3)
+                   x[i] = 1.0
+        else
+                   x[i] = round(x[i], digits=3)
+        end
+    end
+end
+
 
 # ==============================================================================
 # predicat : verifie si une solution entiere est realisable
@@ -301,8 +320,7 @@ end
 # ==============================================================================
 # Forces non-integers variables to be integer. Integer variables may become
 
-function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int})
-
+function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int})::Vector{tSolution{Float64}}
     nbvar::Int = size(A,2)
     nbctr::Int = size(A,1)
 
@@ -335,7 +353,10 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
         graphic ? arrow(arrowBaseX, arrowBaseY, dX, dY, color="fuchsia") : nothing # graphic
         println("Admissibilité du générateur amélioré ",k," : ",estAdmissible(vg[k].sRel.x))
     end
+    
+    return [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)] #  (new) improved Lower Bound Set
 end
+
 
 # ==============================================================================
 # point d'entree principal
@@ -394,29 +415,23 @@ function GM( fname::String,
     # TEMPORARY BENCHMARK
     nbcyclestotal = 0
     nbcyclesMax = 0
-
-    [ajouterX0!(vg, k, L[k]) for k =1:nbgen]
-
-    λ1,λ2 = calculerDirections2(L,vg)
+    
     # ==========================================================================
-    println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
-        
-    transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
-
-
+    # ANALYSIS OF THE FIRST (NON-IMPROVED) GENERATORS
     for k=1:nbgen
 
         verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, L[k].y[1], L[k].y[2]) : nothing
 
         # copie de l'ensemble bornant inferieur dans la stru de donnees iterative ---
-        #ajouterX0!(vg, k, L[k])
+        ajouterX0!(vg, k, L[k])
+
         generateurVisualise = plotGenerators ? k : -1
 
         #function ajouterXtilde!(vg::Vector{tGenerateur}, k::Int64, x::Vector{Int64}, y::Vector{Int64})
 
         # test d'admissibilite et marquage de la solution le cas echeant -------
         if estAdmissible(vg[k].sRel.x)
-            ajouterXtilde!(vg, k, convert.(Int, round.(vg[k].sRel.x,digits=0)), convert.(Int, round.(L[k].y,digits=0)))
+            ajouterXtilde!(vg, k, convert.(Int, vg[k].sRel.x), convert.(Int, L[k].y))
             vg[k].sFea   = true
             verbose ? @printf("→ Admissible \n") : nothing
             # archive le point obtenu pour les besoins d'affichage    
@@ -455,9 +470,23 @@ function GM( fname::String,
 
     #d.xLf1Improved = [vg[k].sRel.x[1] for k in eachindex(vg)] ;  d.yLf1Improved # liste des points (x,y) relaches améliorés #Recent improvement
     #d.xLf2Improved = [] ;  d.yLf2Improved # liste des points (x,y) relaches améliorés #Recent improvement 
+    
+    println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
+    # ANALYSIS OF THE SECOND (IMPROVED) GENERATORS
+    
+    λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(Limproved,vg)
+    verbose ? println("---> Directions computed") : nothing
+    
+    Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
+    verbose ? println("---> Generators improved") : nothing
+
+    
+    λ1, λ2 = interface_computeDirections(Limproved,vg)
+    verbose ? println("---> Directions updated") : nothing
+
     d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
 
-    improvedNadir::tPoint = tPoint(vg[end].sRel.y[1],vg[1].sRel.y[2]) 
+    improvedNadir::tPoint = tPoint(Limproved[end].y[1],Limproved[1].y[2]) 
 
     @printf("4) terraformation generateur par generateur \n\n")
     labelInt = 1 # graphical purpose
@@ -472,12 +501,11 @@ function GM( fname::String,
     nbFeasible = 0
     nbMaxTrials = 0
     nbMaxTime = 0
-    H = Set{Vector{Int64}}()
+    H = Set{Vector{Int64}}() # TODO
     for k in [i for i in 1:nbgen if !isFeasible(vg,i)] # ORIGINAL: for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
         temps = time()
         trial = 0
         
-
         #perturbSolution30!(vg,k,c1,c2,d)
 
         # rounding solution : met a jour sInt dans vg --------------------------
@@ -487,7 +515,7 @@ function GM( fname::String,
 
         arrowBaseX = vg[k].sRel.y[1] # graphic
         arrowBaseY = vg[k].sRel.y[2] # graphic
-        interface_roundingSolution!(vg,k,c1,c2,d,CHOICE_ROUNDING) # un cone et LS sur generateur
+        interface_roundingSolution!(vg,k,c1,c2,d) # un cone et LS sur generateur
         labelInt += 1
         dX = vg[k].sInt.y[1] - arrowBaseX
         dY = vg[k].sInt.y[2] - arrowBaseY
@@ -509,7 +537,7 @@ function GM( fname::String,
             arrowBaseX = vg[k].sInt.y[1] # graphic
             arrowBaseY = vg[k].sInt.y[2] # graphic
             # projectingSolution must be called with carefully ordered arguments!!!
-            projectingSolution!(L,vg,k,A,c1,c2,d,α,β,trial==1) # first projection uses the integrity constraint 
+            projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α) # first projection uses the integrity constraint 
             #
             labelInt += 1
             dX = vg[k].sPrj.y[1] - arrowBaseX
@@ -527,7 +555,7 @@ function GM( fname::String,
                 #roundingSolutionnew24!(vg,k,c1,c2,d)
                 arrowBaseX = vg[k].sPrj.y[1] # graphic
                 arrowBaseY = vg[k].sPrj.y[2]
-                interface_roundingSolution!(vg,k,c1,c2,d,CHOICE_ROUNDING) # graphic
+                interface_roundingSolution!(vg,k,c1,c2,d) # graphic
                 labelInt+=1
                 dX = vg[k].sInt.y[1] - arrowBaseX
                 dY = vg[k].sInt.y[2] - arrowBaseY 
@@ -552,7 +580,6 @@ function GM( fname::String,
                     #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                 end
                 push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
-                println(H)
             end
         end
         nbcyclestotal += nbcycles
@@ -675,10 +702,10 @@ end
 
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
-@time GM("sppnw10.txt", 6, 20, 20)
+#@time GM("sppnw10.txt", 6, 20, 20)
 #@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
-#@time GM("sppnw30.txt", 6, 20, 20)
+@time GM("sppnw30.txt", 6, 20, 20)
 #@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)

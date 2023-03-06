@@ -325,8 +325,8 @@ function roundingSolutionNew23!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int
 
 end
 
-#------------------------------------------------------------------------------------------------------------------------------------
-
+# ==================================================================Rounding Interface===========================================================
+# Interface intended in manipulating and testing differents configurations of GM more easily
 const configurationRounding::Dict{Int,Function} = Dict{Int,Function}(
                                                                 1 => roundingSolution!,
                                                                 2 => roundingSolutionNew23!,

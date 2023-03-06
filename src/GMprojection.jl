@@ -1,4 +1,4 @@
-const MINIMAL_NUMBER_OF_ARGUMENTS::Int = 2
+const MINIMAL_NUMBER_OF_ARGUMENTS::Int = 2 # must be fixed by the programmer
 # Tools
 function computeCλ(k::Int,λ1::Vector{Float64},λ2::Float64,c1::Float64,c2::Float64, guided::Bool)::Vector{Float64}
     guided ? (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2 : ones(length(c1))
@@ -50,8 +50,8 @@ end
 # Projete xTilde sur le polyedre X du SPA avec norme-L1
 # version avec somme ponderee donnant la direction vers le generateur k
 # α ∈ [0,1] -> Module l'utilisation de la projection guidée
-function Δ2SPAbis(A::Array{Int,2}, xTilde::Array{Int,1}, 
-                  c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+function Δ2SPAbis(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
+                  c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
 
     nbctr = size(A,1)
     nbvar = size(A,2)
@@ -70,8 +70,9 @@ function Δ2SPAbis(A::Array{Int,2}, xTilde::Array{Int,1},
     return objective_value(proj), value.(x)
 end
 
-function Δ2SPAbisCone(L::Vector{tSolution{Float64}} ,A::Array{Int,2}, xTilde::Array{Int,1}, 
-                  c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, α::Float64=1., β::Float64=0.5)
+#TODO: factorizing Δ2SPAbisCone arguments
+function Δ2SPAbisCone(L::Vector{tSolution{Float64}},A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
+                  c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, α::Float64=1., β::Float64=0.5)
 
     nbctr = size(A,1)
     nbvar = size(A,2)
@@ -132,8 +133,8 @@ function Δ2SPAbisCone(L::Vector{tSolution{Float64}} ,A::Array{Int,2}, xTilde::A
     return objective_value(proj), value.(x)
 end
 
-function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1}, 
-    c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64=1.)
+function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
+    c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64=1.)
 
     nbctr = size(A,1)
     nbvar = size(A,2)
@@ -155,28 +156,17 @@ function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1},
 end
 
 # ==============================================================================
-#=
-OLD SIGNATURE:
-L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur}, k::Int64, 
-                             A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1},
-                             d::tListDisplay, α::Float64=1.,β::Float64=0.5, MIPproj::Bool=true)
-
-=#
 
 # projecte la solution entiere correspondant au generateur k et test d'admissibilite
 # (A::Array{Int,2}, xTilde::Array{Int,1}, 
 # c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, protectedIndexOfInt::Vector{Int64}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
-function projectingSolution!(A::Array{Int,2}, xTilde::Array{Int,1}; args::Vararg{Any})
+function projectingSolution!(A::Array{Int,2}, vg::Vector{tGenerateur}, k::Int, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay, args::Vararg{Any}=Tuple{Any}())
 
     # --------------------------------------------------------------------------
     # Projete la solution entiere sur le polytope X 
     # generalNadir = fill(tPoint(L[end].y[1],L[1].y[2]),length(vg))
     # nadirs = computeLocalNadirs(vg,L)
-    # λ1,λ2 = calculerDirections2(L,vg)
-    #fPrj, vg[k].sPrj.x = Δ2SPA(A,vg[k].sInt.x)
-    #fPrj, vg[k].sPrj.x = Δ2SPAbisCone(L,A,vg[k].sInt.x,c1,c2,k,λ1,λ2,nadirs,vg,α,β)
-
-    fPrj, vg[k].sPrj.x = Δ2SPABelgique(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α) #: Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α)
+    fPrj, vg[k].sPrj.x = interface_projection!(A,vg[k].sInt.x,k,c1,c2,args...) #: Δ2SPAbis(A,vg[k].sInt.x,c1,c2,k,λ1,λ2,α)
     
     # Nettoyage de la valeur de vg[k].sPrj.x et calcul du point bi-objectif
     # reconditionne les valeurs 0 et 1 et arrondi les autres valeurs
@@ -232,15 +222,15 @@ end
 
 # =================================================PROJECTION INTERFACE=======================================================================
 
-const configurationProjection::Dict{Int,Function} = Dict{Int,Tuple{Function,Int}}(
-                                                                1 => (ΔSPA,2), # (A::Array{Int,2}, xTilde::Array{Int,1})
-                                                                2 => (Δ2SPAbis,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
-                                                                3 => (Δ2SPAbisCone,11), # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, β::Float64)
-                                                                4 => (Δ2SPABelgique,8) # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+const configurationProjection::Dict{Int,Tuple{Function,Int}} = Dict{Int,Tuple{Function,Int}}( # signature of each methods input format
+                                                                1 => (Δ2SPA,2), # (A::Array{Int,2}, xTilde::Array{Int,1})
+                                                                2 => (Δ2SPAbis,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+                                                                3 => (Δ2SPAbisCone,11), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, β::Float64)
+                                                                4 => (Δ2SPABelgique,8) # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
                                                             )
 
-
-function interface_projection!(A::Array{Int,2},xTilde::Vector{Int};args::Vararg{Any},CHOICE::Int=CHOICE_PROJECTION) 
-    @assert configurationProjection[CHOICE][2] == MINIMAL_NUMBER_OF_ARGUMENTS + length(args) "Bad number of arguments for such a projection"
+# args are in fact additional arguments
+function interface_projection!(A::Array{Int,2},xTilde::Vector{Int},args::Vararg{Any}=Typle{Any}();CHOICE::Int=CHOICE_PROJECTION) 
+    @assert configurationProjection[CHOICE][2] == (MINIMAL_NUMBER_OF_ARGUMENTS + length(args)) "Bad number of arguments for such a projection"
     return configurationProjection[CHOICE][1](A,xTilde,args...)
 end

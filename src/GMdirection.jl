@@ -2,7 +2,7 @@
 # Calcule la direction d'interet du nadir vers le milieu de segment reliant deux points generateurs
 
 # Main functions
-function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur})
+function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur})::Tuple{Vector{Float64},Vector{Float64}}
     # function calculerDirections(L, vg::Vector{tGenerateur})
  
      nbgen = size(vg,1)
@@ -23,12 +23,12 @@ function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateu
          @printf("  x2= %7.2f   y2= %7.2f \n",x2,y2)
          @printf("  Δx= %7.2f    Δy= %7.2f \n",Δx,Δy)
          @printf("  λ1= %6.5f    λ2= %6.5f \n",λ1,λ2)
-         plot(n1, n2, xm, ym, linestyle="-", color="blue", marker="+")
+         #=plot(n1, n2, xm, ym, linestyle="-", color="blue", marker="+")
          annotate("",
                   xy=[xm;ym],# Arrow tip
                   xytext=[n1;n2], # Text offset from tip
                   arrowprops=Dict("arrowstyle"=>"->"))
-         println("")
+         println("")=#
      end
      return λ1, λ2
  end
@@ -195,4 +195,15 @@ function calculerDirections4(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
          #println("")
     end
     return λ1, λ2
+end
+
+const configurationComputeDirections::Dict{Int,Function} = Dict{Int,Function}(
+                                                                1 => calculerDirections,
+                                                                2 => calculerDirections2,
+                                                                3 => calculerDirections3,
+                                                                4 => calculerDirections4                                                                
+                                                            )
+
+function interface_computeDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur};CHOICE::Int=CHOICE_COMPUTEDIRECTIONS)
+    return configurationComputeDirections[CHOICE](L,vg)
 end
