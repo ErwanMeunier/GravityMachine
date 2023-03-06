@@ -1,4 +1,8 @@
+const MINIMAL_NUMBER_OF_ARGUMENTS::Int = 2
 # Tools
+function computeCλ(k::Int,λ1::Vector{Float64},λ2::Float64,c1::Float64,c2::Float64, guided::Bool)::Vector{Float64}
+    guided ? (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2 : ones(length(c1))
+end
 
 # ==============================================================================
 # Self-explanatory
@@ -137,7 +141,7 @@ function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1},
 
     cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
 
-    proj = Model(GLPK.Optimizer)
+    proj::Model = Model(GLPK.Optimizer)
     @variable(proj, 0.0 <= x[1:length(xTilde)] <= 1.0)
     @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1)) 
     @constraint(proj, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)    
@@ -151,12 +155,18 @@ function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1},
 end
 
 # ==============================================================================
+#=
+OLD SIGNATURE:
+L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur}, k::Int64, 
+                             A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1},
+                             d::tListDisplay, α::Float64=1.,β::Float64=0.5, MIPproj::Bool=true)
+
+=#
+
 # projecte la solution entiere correspondant au generateur k et test d'admissibilite
 # (A::Array{Int,2}, xTilde::Array{Int,1}, 
 # c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, protectedIndexOfInt::Vector{Int64}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
-function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur}, k::Int64, 
-                             A::Array{Int,2}, c1::Array{Int,1}, c2::Array{Int,1},
-                             d::tListDisplay, α::Float64=1.,β::Float64=0.5, MIPproj::Bool=true)
+function projectingSolution!(A::Array{Int,2}, xTilde::Array{Int,1}; args::Vararg{Any})
 
     # --------------------------------------------------------------------------
     # Projete la solution entiere sur le polytope X 
@@ -220,6 +230,8 @@ function projectingSolution!(L::Vector{tSolution{Float64}}, vg::Vector{tGenerate
     end
 end
 
+# =================================================PROJECTION INTERFACE=======================================================================
+
 const configurationProjection::Dict{Int,Function} = Dict{Int,Tuple{Function,Int}}(
                                                                 1 => (ΔSPA,2), # (A::Array{Int,2}, xTilde::Array{Int,1})
                                                                 2 => (Δ2SPAbis,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
@@ -227,7 +239,8 @@ const configurationProjection::Dict{Int,Function} = Dict{Int,Tuple{Function,Int}
                                                                 4 => (Δ2SPABelgique,8) # (A::Array{Int,2}, xTilde::Array{Int,1}, c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
                                                             )
 
-function interface_projection!(A::Array{Int,2},xTilde::Vector{Int},args::Vararg{Any};CHOICE::Int=4) 
-    @assert configurationProjection[CHOICE][2] == 2 + length(args) "Bad number of arguments for such a projection"
+
+function interface_projection!(A::Array{Int,2},xTilde::Vector{Int};args::Vararg{Any},CHOICE::Int=CHOICE_PROJECTION) 
+    @assert configurationProjection[CHOICE][2] == MINIMAL_NUMBER_OF_ARGUMENTS + length(args) "Bad number of arguments for such a projection"
     return configurationProjection[CHOICE][1](A,xTilde,args...)
 end

@@ -333,6 +333,6 @@ const configurationRounding::Dict{Int,Function} = Dict{Int,Function}(
                                                                 3 => roundingSolutionnew24!
                                                             )
 
-function interface_roundingSolution!(vg::Vector{tGenerateur},k::Int64,c1::Vector{Int},c2::Vector{Int},d::tListDisplay;CHOICE::Int=2)
+function interface_roundingSolution!(vg::Vector{tGenerateur},k::Int64,c1::Vector{Int},c2::Vector{Int},d::tListDisplay;CHOICE::Int=CHOICE_ROUNDING)
     return configurationRounding[CHOICE](vg,k,c1,c2,d)
 end
