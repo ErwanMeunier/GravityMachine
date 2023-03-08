@@ -360,12 +360,12 @@ end
 # ==============================MACROS FOR PLOTTING ============================
 macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
     quote
-        arrowBaseX = $(esc(xbefore))
-        arrowBaseY = $(esc(ybefore))
-        $(expr) # 
-        dX = $(esc(xafter)) - $(esc(xbefore))
-        dY = $(esc(yafter)) - $(esc(ybefore))
-        arrow(arrowBaseX, arrowBaseY, dX, dY, color=$(esc(color)))
+        arrowBaseX::Float64 = $(esc(xbefore))
+        arrowBaseY::Float64 = $(esc(ybefore))
+        $(esc(expr)) # 
+        dX::Float64 = $(esc(xafter)) - $(esc(xbefore))
+        dY::Float64 = $(esc(yafter)) - $(esc(ybefore))
+        plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color=$(esc(color)))
     end
 end
 
@@ -485,13 +485,12 @@ function GM( fname::String,
     println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
     # ANALYSIS OF THE SECOND (IMPROVED) GENERATORS
     
-    λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(Limproved,vg)
+    λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(L,vg)
     verbose ? println("---> Directions computed") : nothing
     
     Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
     verbose ? println("---> Generators improved") : nothing
 
-    
     λ1, λ2 = interface_computeDirections(Limproved,vg)
     verbose ? println("---> Directions updated") : nothing
 
@@ -524,13 +523,16 @@ function GM( fname::String,
         #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
         #protectedIndexOfInt::Vector{Int64}, xFloat::Vector{Int64} = splitByType(vg[k].sRel.x) # TODO: xFloat doesn't matter for now
 
-        arrowBaseX = vg[k].sRel.y[1] # graphic
+        #=arrowBaseX = vg[k].sRel.y[1] # graphic
         arrowBaseY = vg[k].sRel.y[2] # graphic
-        interface_roundingSolution!(vg,k,c1,c2,d) # un cone et LS sur generateur
+        interface_roundingSolution!(vg,k,c1,c2,d)  # un cone et LS sur generateur
         labelInt += 1
         dX = vg[k].sInt.y[1] - arrowBaseX
         dY = vg[k].sInt.y[2] - arrowBaseY
         graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange") : nothing
+        macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)=#
+        @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sRel.y[1] vg[k].sRel.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
+
         slowexec ? sleep(slowtime) : nothing
         # => Only floating point value are modified so splitByType does have style a sense
         #push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
@@ -550,10 +552,12 @@ function GM( fname::String,
             # projectingSolution must be called with carefully ordered arguments!!!
             projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α) # first projection uses the integrity constraint 
             #
-            labelInt += 1
             dX = vg[k].sPrj.y[1] - arrowBaseX
             dY = vg[k].sPrj.y[2] - arrowBaseY
             graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="red") : nothing
+
+            # DOES NOT PLOT !!! @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
+            
             slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
             push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
@@ -562,16 +566,11 @@ function GM( fname::String,
             if !isFeasible(vg,k)
 
                 # rounding solution : met a jour sInt dans vg --------------------------
-                #roundingSolution!(vg,k,c1,c2,d)
-                #roundingSolutionnew24!(vg,k,c1,c2,d)
-                arrowBaseX = vg[k].sPrj.y[1] # graphic
-                arrowBaseY = vg[k].sPrj.y[2]
-                interface_roundingSolution!(vg,k,c1,c2,d) # graphic
-                labelInt+=1
-                dX = vg[k].sInt.y[1] - arrowBaseX
-                dY = vg[k].sInt.y[2] - arrowBaseY 
-                graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange") : nothing
+
+                @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
+
                 slowexec ? sleep(slowtime) : nothing
+
                 println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
                 # test detection cycle sur solutions entieres ------------------
@@ -580,13 +579,7 @@ function GM( fname::String,
                     println("CYCLE!!!!!!!!!!!!!!!")
                     nbcycles += 1
                     # perturb solution
-                    arrowBaseX = vg[k].sInt.y[1] # graphic
-                    arrowBaseY = vg[k].sInt.y[2]
-                    perturbSolution30!(vg,k,c1,c2,d)
-                    labelInt+=1
-                    dX = vg[k].sInt.y[1] - arrowBaseX
-                    dY = vg[k].sInt.y[2] - arrowBaseY
-                    graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, shape="right", color="pink",label=string(labelInt)) : nothing
+                    @makearrow perturbSolution30!(vg,k,c1,c2,d) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "pink"
                     slowexec ? sleep(slowtime) : nothing
                     #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                 end
