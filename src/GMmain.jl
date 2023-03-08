@@ -357,6 +357,17 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
     return [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)] #  (new) improved Lower Bound Set
 end
 
+# ==============================MACROS FOR PLOTTING ============================
+macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
+    quote
+        arrowBaseX = $(esc(xbefore))
+        arrowBaseY = $(esc(ybefore))
+        $(expr) # 
+        dX = $(esc(xafter)) - $(esc(xbefore))
+        dY = $(esc(yafter)) - $(esc(ybefore))
+        arrow(arrowBaseX, arrowBaseY, dX, dY, color=$(esc(color)))
+    end
+end
 
 # ==============================================================================
 # point d'entree principal
