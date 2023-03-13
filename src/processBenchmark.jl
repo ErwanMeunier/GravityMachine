@@ -83,11 +83,61 @@ function plotQualities(filename::String, characteristic::Symbol, characteristicB
     plt.close(fig)
 end
 
+function plotQualitiesScatterLine(filename::String, characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"resultRef.csv")
+    # parsing 
+    df = DataFrame(CSV.File(filename))
+    refDf = DataFrame(CSV.File(refFile))
+    # getting some informations
+    names = df[!,:Instance]
+    characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
+    characteristicRef = (characteristicBis==nothing ? refDf[!,characteristic] : (refDf[!,characteristic] ./ refDf[!,characteristicBis]))
+    #println(characteristicCurrent)
+    #println(characteristicRef)
+    #println(names)
+    
+    xPos = collect(1:length(names))
+
+    width = 0.4
+    fig, ax1 = plt.subplots()
+    #ax2 = ax1.twinx() # second axes
+    fig.set_dpi(300)
+    fig.set_size_inches(20.,13.)
+    ax1.tick_params(labelsize=6)
+    plt.plot(xPos ,characteristicCurrent,color="blue",)
+    plt.plot(xPos ,characteristicRef,color="green")
+    plt.scatter(xPos ,characteristicCurrent,label="New method",color="blue")
+    plt.scatter(xPos ,characteristicRef,label="State-of-the-art results",color="green")
+
+    # Setting the y_axis with a personalised density of ticks
+    nbpoints = 20
+    max_y = max(maximum(characteristicRef),maximum(characteristicCurrent))
+    yticks = range(start=0.,step=max_y/nbpoints,stop=max_y)
+    plt.yticks(yticks, labels=[string(v) for v in yticks])
+    
+    title::String = (characteristicBis==nothing ? string(characteristic) : string(characteristic)*"/"*string(characteristicBis))
+
+    plt.xticks(xPos, collect(map(x->x[end-5:end-4],names)))#,fontsize=5)
+    plt.xlabel("Instance")
+    plt.ylabel(title)
+    plt.title("Comparison between GM ref and "*filename[1:end-3]*"-"*title)
+    meanRef = sum(characteristicRef)/length(characteristicRef)
+    plt.plot([xPos[1]-width,xPos[end]+width],[meanRef,meanRef],color="green",linestyle="dashed",label="Mean - ref State-of-the-art")
+    meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent)
+    plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],color="blue",linestyle="dashed",label="Mean - new method")
+    #ax2.set_yticks([meanCurrent,meanRef],["Means for SOTA","Mean new method"])
+    #plt.yticks([meanRef],["Mean-New Method"],color="orange")
+    #plt.yticks([meanCurrent],["Mean_State of the Art"],color="red")
+    plt.legend()
+    #plt.show()
+    #println("Saving path : ", filename[1:end-5]*"/"*string(characteristic)*".png")
+    plt.savefig(filename[1:end-4]*"/"*title*"scatline.png")
+    plt.close(fig)
+end
+
 function plotPerformances()
     csvf::Vector{String} = [file for file in readdir(path) if file[end-3:end]==".csv"]
 
     println("Files :", csvf)
-
     for file in csvf
         try
             mkdir(path*file[1:end-4])
@@ -96,9 +146,9 @@ function plotPerformances()
         end
 
         for characteristic in fields
-                plotQualities(path*file, characteristic, characteristicBis=:Time)
+                #plotQualitiesScatterLine(path*file, characteristic, characteristicBis=:Time) # plotQualities(path*file, characteristic, characteristicBis=:Time) before
             try
-                plotQualities(path*file, characteristic)
+                plotQualitiesScatterLine(path*file, characteristic)
             catch ArgumentError # compatibility with the former version of GMBenchmark which includes less measures
                 println("WARNING: retro-Compatibility mode activated")
                 nothing
@@ -196,9 +246,9 @@ function performanceProfileFromRaw()
 end
 
 function main()
-    #plotPerformances()
+    plotPerformances()
     #plotRatioMIP()
-    performanceProfileFromRaw()
+    #performanceProfileFromRaw()
 end
 
 main()

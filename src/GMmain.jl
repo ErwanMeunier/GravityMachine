@@ -4,17 +4,29 @@
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
 const verbose = true
+
+# Figures
 const graphic = true
+const savegraphic = false # set to false by default
+const savingDir = "./results/figuresSol/"
+
+if savegraphic
+    try
+        mkdir(savingDir)
+    catch; Base.IOError # the directory already exists
+        println("WARNING: The directory already exists -> Figures inside the directory will still be updated") 
+    end
+end
 
 # Display dinamically (step-by-step) the inner operations of gravity machine 
 const slowexec = true
-const slowtime = 1
+const slowtime = 0.5
 # ---
 
 const plotGenerators = true
 global generateurVisualise = -1
 
-global CHOICE_ROUNDING = 1 # FROM 1 TO 3
+global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 4 # FROM 1 TO 4
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 
@@ -189,7 +201,22 @@ function isTimeout(temps, maxTime)
 #    verbose && time()- temps > maxTime ? println("   maxTime") : nothing
     return (time()- temps > maxTime)
 end
-
+# ===============================================================================
+# from : https://discourse.julialang.org/t/help-writing-a-timeout-macro/16591/7
+macro timeout(seconds, expr, fail)
+    quote
+        tsk = @task $esc(expr)
+        schedule(tsk)
+        Timer($(esc(seconds))) do timer
+            istaskdone(tsk) || Base.throwto(tsk, InterruptException())
+        end
+        try
+            fetch(tsk)
+        catch _
+            $(esc(fail))
+        end
+    end
+end
 
 # ==============================================================================
 # elabore pC le pointeur du cone ouvert vers L
@@ -317,59 +344,84 @@ function selectionPoints(vg::Vector{tGenerateur}, k::Int64)
     return pPrec, pCour, pSuiv
 end
 
+# ==============================MACROS FOR PLOTTING ARROWS============================
+
+macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
+    quote
+        if $(esc(graphic)) 
+            arrowBaseX::Float64 = $(esc(xbefore))
+            arrowBaseY::Float64 = $(esc(ybefore))
+            $(esc(expr))
+            dX::Float64 = $(esc(xafter)) - arrowBaseX
+            dY::Float64 = $(esc(yafter)) - arrowBaseY
+            println(dX,dY)
+            arrow(arrowBaseX, arrowBaseY, dX, dY, color=$(color))
+        end
+    end
+end
+
+# ==============================================================================
+
 # ==============================================================================
 # Forces non-integers variables to be integer. Integer variables may become
 
-function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int})::Vector{tSolution{Float64}}
+function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay)::Vector{tSolution{Float64}}
     nbvar::Int = size(A,2)
     nbctr::Int = size(A,1)
-
+    println("TRANSFORMING LOWER BOUNDED SET")
     for k in eachindex(vg)
-        cλ::Vector{Float64} = (1+(λ1[k]-1)).*c1 + (1+(λ2[k]-1)).*c2
+        #cλ::Vector{Float64} = λ1[k].*c2 + λ2[k].*c1 
+
+        cλ::Vector{Float64} = λ1[k].*c1 + λ2[k].*c2 # 
 
         model::Model = Model(GLPK.Optimizer)
         @variable(model, 0<=x[1:nbvar]<=1)
         @objective(model, Min, sum(cλ[j]*x[j] for j in 1:nbvar))
         @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
-        # The new solution must be dominated by the "former generator"
-        @expression(model, obj1, sum(c1[j]*x[j] for j in 1:nbvar)) # first objective 
-        @expression(model, obj2, sum(c2[j]*x[j] for j in 1:nbvar)) # second objective
-        @constraint(model, obj1 >= vg[k].sRel.y[1]) # make a freehand figure and trust your intuition... TODO
-        @constraint(model, obj2 >= vg[k].sRel.y[2])
-        #---
         [set_binary(model[:x][i]) for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0,atol=10^-3)||isapprox(vg[k].sRel.x[i],1,atol=10^-3))]
         
         optimize!(model)
 
         vg[k].sRel.x = value.(x)
-        
-        arrowBaseX = vg[k].sRel.y[1] # graphic
-        arrowBaseY = vg[k].sRel.y[2] # graphic
 
-        vg[k].sRel.y[1], vg[k].sRel.y[2] = evaluerSolution(vg[k].sRel.x,c1,c2)
-        
-        dX = vg[k].sRel.y[1] - arrowBaseX # graphic
-        dY = vg[k].sRel.y[2] - arrowBaseY # graphic  
-        graphic ? arrow(arrowBaseX, arrowBaseY, dX, dY, color="fuchsia") : nothing # graphic
-        println("Admissibilité du générateur amélioré ",k," : ",estAdmissible(vg[k].sRel.x))
+        @makearrow begin vg[k].sRel.y[1], vg[k].sRel.y[2] = evaluerSolution(vg[k].sRel.x,c1,c2) end vg[k].sRel.y[1] vg[k].sRel.y[2] vg[k].sRel.y[1] vg[k].sRel.y[2] "fuchsia"
+
+        if estAdmissible(vg[k].sRel.x);
+            println("Admissibilité du générateur amélioré ", k)
+            vg[k].sFea = true
+            ajouterXtilde!(vg, k, convert.(Int, round.(vg[k].sRel.x)), convert.(Int, round.(vg[k].sRel.y)))
+            if generateurVisualise == -1 
+                # archivage pour tous les generateurs
+                push!(d.XFeas,vg[k].sRel.y[1])
+                push!(d.YFeas,vg[k].sRel.y[2])
+            elseif generateurVisualise == k
+                # archivage seulement pour le generateur k
+                push!(d.XFeas,vg[k].sRel.y[1])
+                push!(d.YFeas,vg[k].sRel.y[2])
+            end 
+        else
+            println("Le générateur amélioré ", k, " n'est pas admissible")
+        end
+            
+          #=  vg[k].sFea   = true
+            verbose ? @printf("→ Admissible \n") : nothing
+            # archive le point obtenu pour les besoins d'affichage    
+            if generateurVisualise == -1 
+                # archivage pour tous les generateurs
+                push!(d.XFeas,vg[k].sInt.y[1])
+                push!(d.YFeas,vg[k].sInt.y[2])
+            elseif generateurVisualise == k
+                # archivage seulement pour le generateur k
+                push!(d.XFeas,vg[k].sInt.y[1])
+                push!(d.YFeas,vg[k].sInt.y[2])
+            end 
+        else=#
+
     end
     
     return [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)] #  (new) improved Lower Bound Set
 end
 
-# ==============================MACROS FOR PLOTTING ============================
-macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
-    quote
-        arrowBaseX::Float64 = $(esc(xbefore))
-        arrowBaseY::Float64 = $(esc(ybefore))
-        $(esc(expr)) # 
-        dX::Float64 = $(esc(xafter)) - $(esc(xbefore))
-        dY::Float64 = $(esc(yafter)) - $(esc(ybefore))
-        plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color=$(esc(color)))
-    end
-end
-
-# ==============================================================================
 # point d'entree principal
 
 function GM( fname::String,
@@ -389,7 +441,7 @@ function GM( fname::String,
     nbvar = size(A,2)
     nbobj = 2
 
-    # structure pour les points qui apparaitront dans l'affichage graphique [],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]
+    # structure pour les points qui apparaitront dans l'affichage graphique
     d::tListDisplay = tListDisplay([Vector{tSolution}() for k in 1:16]...)
 
     # --------------------------------------------------------------------------
@@ -448,7 +500,7 @@ function GM( fname::String,
             # archive le point obtenu pour les besoins d'affichage    
             if generateurVisualise == -1 
                 # archivage pour tous les generateurs
-                push!(d.XFeas,vg[k].sInt.y[1])
+                push!(d.XFeas,vg[k].sInt.y[1]) # instead of sInt
                 push!(d.YFeas,vg[k].sInt.y[2])
             elseif generateurVisualise == k
                 # archivage seulement pour le generateur k
@@ -461,7 +513,6 @@ function GM( fname::String,
         end
 
     end
-    verbose ? println("") : nothing
 
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
@@ -472,7 +523,7 @@ function GM( fname::String,
     #ylim(20000,40000)
     graphic ? xlabel(L"z^1(x)") : nothing
     graphic ? ylabel(L"z^2(x)") : nothing
-    graphic ? PyPlot.title("Cone | 1 rounding | 2-$fname") : nothing
+    graphic ? title("Cone | 1 rounding | 2-$fname") : nothing
 
     # --------------------------------------------------------------------------
     # --------------------------------------------------------------------------
@@ -488,12 +539,13 @@ function GM( fname::String,
     λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(L,vg)
     verbose ? println("---> Directions computed") : nothing
     
-    Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2)
+    Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2,d)
     verbose ? println("---> Generators improved") : nothing
 
-    λ1, λ2 = interface_computeDirections(Limproved,vg)
-    verbose ? println("---> Directions updated") : nothing
+    λ1, λ2 = interface_computeDirections(L,vg) # TODO: with new generators
+    verbose ? println("---> Directions updated according to the improved generators") : nothing
 
+    #d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
     d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
 
     improvedNadir::tPoint = tPoint(Limproved[end].y[1],Limproved[1].y[2]) 
@@ -503,10 +555,7 @@ function GM( fname::String,
     #--- Number of trials allowed
 
     globalNadir = tPoint(L[end].y[1],L[1].y[2])
-    #budgetMaxTrials = [Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[1].sRel.y[1],vg[1].sRel.y[2]),tPoint(vg[3].sRel.y[1],vg[3].sRel.y[2]),globalNadir)))]
-    #append!(budgetMaxTrials,[Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[k-1].sRel.y[1],vg[k-1].sRel.y[2]),tPoint(vg[k+1].sRel.y[1],vg[k+1].sRel.y[2]),globalNadir))) for k in 2:(nbgen-1)])
-    #append!(budgetMaxTrials,Int64(ceil(maxTrial*nbgen/countLP(tPoint(vg[nbgen-2].sRel.y[1],vg[nbgen-2].sRel.y[2]),tPoint(vg[nbgen].sRel.y[1],vg[nbgen].sRel.y[2]),globalNadir))))
-    #--- End of "Number of trials allowed"
+    
     #println("Budget par générateur : ", budgetMaxTrials)
     nbFeasible = 0
     nbMaxTrials = 0
@@ -521,17 +570,8 @@ function GM( fname::String,
         # rounding solution : met a jour sInt dans vg --------------------------
         #roundingSolution!(vg,k,c1,c2,d)  # un cone
         #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
-        #protectedIndexOfInt::Vector{Int64}, xFloat::Vector{Int64} = splitByType(vg[k].sRel.x) # TODO: xFloat doesn't matter for now
 
-        #=arrowBaseX = vg[k].sRel.y[1] # graphic
-        arrowBaseY = vg[k].sRel.y[2] # graphic
-        interface_roundingSolution!(vg,k,c1,c2,d)  # un cone et LS sur generateur
-        labelInt += 1
-        dX = vg[k].sInt.y[1] - arrowBaseX
-        dY = vg[k].sInt.y[2] - arrowBaseY
-        graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="orange") : nothing
-        macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)=#
-        @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sRel.y[1] vg[k].sRel.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
+        @makearrow(interface_roundingSolution!(vg,k,c1,c2,d),vg[k].sRel.y[1],vg[k].sRel.y[2],vg[k].sInt.y[1],vg[k].sInt.y[2],"orange")
 
         slowexec ? sleep(slowtime) : nothing
         # => Only floating point value are modified so splitByType does have style a sense
@@ -547,18 +587,8 @@ function GM( fname::String,
             println("   α = ", α)
             println("   β = ", β)
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
-            arrowBaseX = vg[k].sInt.y[1] # graphic
-            arrowBaseY = vg[k].sInt.y[2] # graphic
-            # projectingSolution must be called with carefully ordered arguments!!!
-            projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α) # first projection uses the integrity constraint 
-            #
-            dX = vg[k].sPrj.y[1] - arrowBaseX
-            dY = vg[k].sPrj.y[2] - arrowBaseY
-            graphic ? plt.arrow(arrowBaseX, arrowBaseY, dX, dY, color="red") : nothing
-
-            # DOES NOT PLOT !!! @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
-            
-            slowexec ? sleep(slowtime) : nothing
+            @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
+            #slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
             push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
             println(H)
@@ -601,9 +631,6 @@ function GM( fname::String,
 
 
     end
-
-    println("");
-
     # ==========================================================================
 
     @printf("5) Extraction des resultats\n\n")
@@ -643,11 +670,9 @@ function GM( fname::String,
     graphic ? scatter(d.xLImproved,d.yLImproved, color="fuchsia", marker=".",label = "Improved generators", lw = 2) : nothing
     # Donne le nadir global  ---------------------------------------------------
     # Des générateurs non améliorés
-    println(d.xL)
-    println(d.yL)
-    println(d.xLImproved)
-    println(d.yLImproved)
+
     graphic ? scatter([L[end].y[1]],[L[1].y[2]],color="blue",marker="*", label = "Non-improved Nadir", lw = 2) : nothing
+    
     # Des générateurs améliorés
     graphic ? scatter([improvedNadir.x],[improvedNadir.y],color="fuchsia",marker="*", label = "Improved Nadir", lw = 2) : nothing
     
@@ -698,19 +723,26 @@ function GM( fname::String,
         @printf("Quality measure: %5.2f %%\n", quality*100)
     end
     
+    if savegraphic
+        savefig(savingDir*fname*".png")
+        close()
+    end
     # TEMPORARY TO BENCHMARK
     return quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials
 end
 
 # ==============================================================================
-
+#=for name in readdir("../SPA/instances/")
+    @timeout 30 GM(name[4:end], 6, 20, 20) nothing
+end=#
+#[GM(name[4:end], 6, 20, 20) for name in readdir("../SPA/instances")[20:end]]
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
-#@time GM("sppnw10.txt", 6, 20, 20)
+#@time GM("sppnw01.txt", 6, 20, 20)
 #@time GM("sppnw16.txt", 6, 20, 20)
 #@time GM("sppnw31.txt", 6, 20, 20)
-@time GM("sppnw30.txt", 6, 20, 20)
-#@time GM("sppnw40.txt", 6, 20, 20)
+#@time GM("sppnw30.txt", 6, 20, 20)
+@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)
 #nothing

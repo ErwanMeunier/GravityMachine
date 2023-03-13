@@ -50,13 +50,13 @@ function calculerDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateu
  
          xm=vg[k].sRel.y[1] # coordonnée z1 du générateur
          ym=vg[k].sRel.y[2] # coordonnée z2 du générateur
-         Δx = abs(n1-xm)
-         Δy = abs(n2-ym)
-         λ1[k] =  1 - Δx / (Δx+Δy)
-         λ2[k] =  1 - Δy / (Δx+Δy)
+         Δy1 = n1-xm # abs(n1-xm)
+         Δy2 = n2-ym # abs(n2-ym)
+         λ2[k] =  1 - Δy1 / (Δy1+Δy2) # = Δy/(Δx + Δy)
+         λ1[k] =  1 - Δy2 / (Δy1+Δy2) # = Δx/(Δx + Δy) = 1 - λ1[k]
          @printf("  k= %3d   ",k)
          @printf("  xm= %7.2f   ym= %7.2f ",xm,ym)
-         @printf("  Δx= %8.2f    Δy= %8.2f ",Δx,Δy)
+         @printf("  Δx= %8.2f    Δy= %8.2f ",Δy1,Δy2)
          @printf("  λ1= %6.5f    λ2= %6.5f \n",λ1[k],λ2[k])
          #=if generateurVisualise == -1 
              # affichage pour tous les generateurs
