@@ -19,7 +19,7 @@ if savegraphic
 end
 
 # Display dinamically (step-by-step) the inner operations of gravity machine 
-const slowexec = true
+const slowexec = false
 const slowtime = 0.5
 # ---
 
@@ -27,7 +27,7 @@ const plotGenerators = true
 global generateurVisualise = -1
 
 global CHOICE_ROUNDING = 2 # FROM 1 TO 3
-global CHOICE_PROJECTION = 4 # FROM 1 TO 4
+global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 
 verbose ? println("-) Active les packages requis\n") : nothing
@@ -147,6 +147,13 @@ function estAdmissible(x::Vector{Float64})::Bool
     return admissible
 end
 
+# ==============================================================================
+# Tests whether the given solution is feasible and not previously already starting from a previous generator, or not
+# Leads to a integer solution
+
+function estAdmissibleDiff(x::Vector{Float64}, d::tListDisplay)::Bool
+    #TODO
+end
 
 # ==============================================================================
 # calcule la performance z d'une solution x sur les 2 objectifs
@@ -402,21 +409,6 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
         else
             println("Le générateur amélioré ", k, " n'est pas admissible")
         end
-            
-          #=  vg[k].sFea   = true
-            verbose ? @printf("→ Admissible \n") : nothing
-            # archive le point obtenu pour les besoins d'affichage    
-            if generateurVisualise == -1 
-                # archivage pour tous les generateurs
-                push!(d.XFeas,vg[k].sInt.y[1])
-                push!(d.YFeas,vg[k].sInt.y[2])
-            elseif generateurVisualise == k
-                # archivage seulement pour le generateur k
-                push!(d.XFeas,vg[k].sInt.y[1])
-                push!(d.YFeas,vg[k].sInt.y[2])
-            end 
-        else=#
-
     end
     
     return [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)] #  (new) improved Lower Bound Set
@@ -560,13 +552,27 @@ function GM( fname::String,
     nbFeasible = 0
     nbMaxTrials = 0
     nbMaxTime = 0
-    H = Set{Vector{Int64}}() # TODO
-    for k in [i for i in 1:nbgen if !isFeasible(vg,i)] # ORIGINAL: for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
+
+    idxFeasibleGenerators::Vector{Int} = [k for k in 1:nbgen if isFeasible(vg,k)]
+    solutionsHist::Set{Vector{Int}} = Set{Vector{Int}}([vg[k].sInt.x for k in idxFeasibleGenerators]) # tabu memory
+    
+    antecedantPoint::Dict{Vector{Int},Vector{Vector{Float64}}} = Dict{Vector{Int},Vector{Vector{Float64}}}([Pair(copy(vg[k].sInt.x),[]) for k in idxFeasibleGenerators]...)
+    #=
+    Contain : 
+    Feasible solution and their antecedants which may be:
+    -> Some improved generators
+    -> Some perturbed solutions
+    =#
+
+    # archiving of improved generators which lead to feasible solution
+    for k in idxFeasibleGenerators
+        push!(antecedantPoint[vg[k].sInt.x],Limproved[k].x)
+    end
+
+    for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
         temps = time()
         trial = 0
-        
-        #perturbSolution30!(vg,k,c1,c2,d)
-
+    
         # rounding solution : met a jour sInt dans vg --------------------------
         #roundingSolution!(vg,k,c1,c2,d)  # un cone
         #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
@@ -575,10 +581,12 @@ function GM( fname::String,
 
         slowexec ? sleep(slowtime) : nothing
         # => Only floating point value are modified so splitByType does have style a sense
-        #push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
         verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
         nbcycles = 0
+        nbcyclesSameSol = 0
+        
         while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
+            H::Vector{Vector{Int}} = Vector{Vector{Int}}()
             trial+=1
             α = 1.# 1/(2^(trial-1))
             β = 0.#0.4 + 0.6*trial/maxTrial
@@ -587,24 +595,35 @@ function GM( fname::String,
             println("   α = ", α)
             println("   β = ", β)
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
-            @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
+            temphist = vg[k].sInt 
+            @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,vg[k].sInt.x,nbcyclesSameSol) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
             #slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
-            push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
-            println(H)
             #if isFeasible(vg,k) && 
-            if !isFeasible(vg,k)
-
+            if isFeasible(vg,k)
+                if Int.(vg[k].sPrj.x) in solutionsHist
+                    push!(antecedantPoint[Int.(vg[k].sPrj.x)],copy(vg[k].sInt.x))
+                    vg[k].sFea = false
+                    #@makearrow perturbSolutionInt!(vg,k,c1,c2,d,antecedentPoint[vg[k].sInt.x]) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "pink"
+                    @makearrow perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,1.) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "cyan"
+                    nbcyclesSameSol += 1
+                else # the new solution is added to the tabulist
+                    antecedantPoint[vg[k].sPrj.x] = [Int.(vg[k].sInt.x)]
+                    #push!(solutionsHist,copy(vg[k].sInt.x))
+                    #antecedentPoint[copy(vg[k].sInt.x)] = [copy(vg[k].sInt.x)] # initializer
+                end
+            else
                 # rounding solution : met a jour sInt dans vg --------------------------
 
                 @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
-
                 slowexec ? sleep(slowtime) : nothing
+
+                push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
 
                 println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
                 # test detection cycle sur solutions entieres ------------------
-                cycle = [vg[k].sInt.y[1],vg[k].sInt.y[2]] in H
+                cycle = (vg[k].sInt.y[1],vg[k].sInt.y[2]) in H
                 if (cycle == true)
                     println("CYCLE!!!!!!!!!!!!!!!")
                     nbcycles += 1
@@ -613,13 +632,13 @@ function GM( fname::String,
                     slowexec ? sleep(slowtime) : nothing
                     #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                 end
-                push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
             end
         end
         nbcyclestotal += nbcycles
 
         if t1
             println("   feasible \n")
+            push!(solutionsHist,vg[k].sInt.x)
             nbFeasible+=1
         elseif t2
             println("   maxTrial \n")
@@ -731,6 +750,17 @@ function GM( fname::String,
     return quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials
 end
 
+function generateRandomBinSolution(n,nbsol)::Vector{Vector{Int}}
+    result::Vector{Vector{Int}} = [Vector{Int}(undef,n) for k in 1:nbsol]
+    sizehint!(result,nbsol)
+    for k in 1:nbsol
+        for i in 1:n
+            result[k][i] = rand() <= 1/2 ? 0 : 1
+        end
+    end
+    return result
+end
+
 # ==============================================================================
 #=for name in readdir("../SPA/instances/")
     @timeout 30 GM(name[4:end], 6, 20, 20) nothing
@@ -740,9 +770,9 @@ end=#
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw01.txt", 6, 20, 20)
 #@time GM("sppnw16.txt", 6, 20, 20)
-#@time GM("sppnw31.txt", 6, 20, 20)
+@time GM("sppnw31.txt", 6, 20, 20)
 #@time GM("sppnw30.txt", 6, 20, 20)
-@time GM("sppnw40.txt", 6, 20, 20)
+#@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)
 #nothing

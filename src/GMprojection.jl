@@ -4,7 +4,7 @@ function computeCλ(k::Int,λ1::Vector{Float64},λ2::Float64,c1::Float64,c2::Flo
     guided ? (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2 : ones(length(c1))
 end
 
-# ==============================================================================
+# ============================Some tools================================================
 # Self-explanatory
 function computeLocalNadirs(vg::Vector{tGenerateur}, L::Vector{tSolution{Float64}})::Vector{tPoint}
     @assert length(vg)>2 "vg must be of size greater or equal than 3"
@@ -17,7 +17,6 @@ function computeLocalNadirs(vg::Vector{tGenerateur}, L::Vector{tSolution{Float64
     return nadirs
 end
 
-
 # ==============================PROJECTION METHODS======================= 
 #=
 Any new projection method must fill the following specifications:
@@ -27,7 +26,6 @@ Any new projection method must fill the following specifications:
 - TODO
 =#
 # =======================================================================
-
 
 # Projete xTilde sur le polyedre X du SPA avec norme-L1
 # version FP 2005
@@ -50,6 +48,7 @@ end
 # Projete xTilde sur le polyedre X du SPA avec norme-L1
 # version avec somme ponderee donnant la direction vers le generateur k
 # α ∈ [0,1] -> Module l'utilisation de la projection guidée
+
 function Δ2SPAbis(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
                   c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
 
@@ -155,13 +154,52 @@ function Δ2SPABelgique(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
     return objective_value(proj), value.(x)
 end
 
+
+#=
+knownSol : Already known solution
+nbCycles : Number of times where the projection reach an already known solution
+
+=#
+function Δ2SPABelgique2(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
+    c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, knownSol::Vector{Int}, nbCycles::Int)
+
+    nbctr = size(A,1)
+    nbvar = size(A,2)
+    idxTilde0, idxTilde1 = split01(xTilde)
+
+    cλ = (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2
+
+    proj::Model = Model(GLPK.Optimizer)
+    @variable(proj, 0.0 <= x[1:length(xTilde)] <= 1.0)
+    @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1)) 
+    @constraint(proj, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)    
+    optimize!(proj)
+
+    xOutput = value.(x)
+    [set_binary(proj[:x][i]) for i=1:length(xTilde) if !(isapprox(xOutput[i],0,atol=10^-3)||isapprox(xOutput[i],1,atol=10^-3))]
+    
+    optimize!(proj)
+
+    if nbCycles > 0 
+        println("Modifying the model used in the projection in order to avoid reaching the known solution twice")
+        xOutput = value.(x)
+        idxTilde0KnownSol, idxTilde1KnownSol = split01(knownSol)
+        [set_binary(proj[:x][i]) for i in 1:nbvar]
+        @constraint(proj, diffToKnownSolution, sum(x[i] for i in idxTilde0KnownSol)+sum(x[i] for i in idxTilde1KnownSol)<=nbvar-1)
+        optimize!(proj)
+    end
+
+    return objective_value(proj), value.(x)
+end
+
+
 # ==============================================================================
 
 # projecte la solution entiere correspondant au generateur k et test d'admissibilite
 # (A::Array{Int,2}, xTilde::Array{Int,1}, 
 # c1::Array{Int,1}, c2::Array{Int,1}, k::Int64, protectedIndexOfInt::Vector{Int64}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
 function projectingSolution!(A::Array{Int,2}, vg::Vector{tGenerateur}, k::Int, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay, args::Vararg{Any}=Tuple{Any}())
-
+    println("---Projection solution--- | generator ", k)
     # --------------------------------------------------------------------------
     # Projete la solution entiere sur le polytope X 
     # generalNadir = fill(tPoint(L[end].y[1],L[1].y[2]),length(vg))
@@ -192,25 +230,25 @@ function projectingSolution!(A::Array{Int,2}, vg::Vector{tGenerateur}, k::Int, c
     # Teste si la projection est admissible
 
     if estAdmissible(vg[k].sPrj.x)
-
         # sauvegarde de la solution entiere admissible obtenue
-        vg[k].sInt.x = deepcopy(vg[k].sPrj.x)
-        vg[k].sInt.y[1] = vg[k].sPrj.y[1]
-        vg[k].sInt.y[2] = vg[k].sPrj.y[2]
+        # vg[k].sInt.x = deepcopy(vg[k].sPrj.x)
+        # vg[k].sInt.y[1] = vg[k].sPrj.y[1]
+        # vg[k].sInt.y[2] = vg[k].sPrj.y[2]
         vg[k].sFea = true
         @printf("→ Admissible "); print("                       ")
-
+        # ajouterXtilde!(vg, k, convert.(Int, round.(vg[k].sPrj.x)), convert.(Int, round.(vg[k].sPrj.y))) # TODO: GET RID OF THIS LINE 
+        vg[k].sPrj.x = round.(vg[k].sPrj.x)
+        vg[k].sPrj.y = round.(vg[k].sPrj.y)
         # archive le point obtenu pour les besoins d'affichage
         if generateurVisualise == -1 
             # archivage pour tous les generateurs
-            push!(d.XFeas, vg[k].sPrj.y[1])
-            push!(d.YFeas, vg[k].sPrj.y[2])
+            push!(d.XFeas, copy(vg[k].sPrj.y[1]))
+            push!(d.YFeas, copy(vg[k].sPrj.y[2]))
         elseif generateurVisualise == k
             # archivage seulement pour le generateur k
-            push!(d.XFeas, vg[k].sPrj.y[1])
-            push!(d.YFeas, vg[k].sPrj.y[2])
+            push!(d.XFeas, copy(vg[k].sPrj.y[1]))
+            push!(d.YFeas, copy(vg[k].sPrj.y[2]))
         end  
-
     else
 
         vg[k].sFea = false
@@ -226,11 +264,12 @@ const configurationProjection::Dict{Int,Tuple{Function,Int}} = Dict{Int,Tuple{Fu
                                                                 1 => (Δ2SPA,2), # (A::Array{Int,2}, xTilde::Array{Int,1})
                                                                 2 => (Δ2SPAbis,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
                                                                 3 => (Δ2SPAbisCone,11), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, β::Float64)
-                                                                4 => (Δ2SPABelgique,8) # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+                                                                4 => (Δ2SPABelgique,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
+                                                                5 => (Δ2SPABelgique2,10) # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, knownSol::Vector{Int})
                                                             )
 
 # args are in fact additional arguments
 function interface_projection!(A::Array{Int,2},xTilde::Vector{Int},args::Vararg{Any}=Typle{Any}();CHOICE::Int=CHOICE_PROJECTION) 
-    @assert configurationProjection[CHOICE][2] == (MINIMAL_NUMBER_OF_ARGUMENTS + length(args)) "Bad number of arguments for such a projection"
-    return configurationProjection[CHOICE][1](A,xTilde,args...)
+    @assert configurationProjection[CHOICE][2] <= (MINIMAL_NUMBER_OF_ARGUMENTS + length(args)) "Bad number of arguments for such a projection"
+    return configurationProjection[CHOICE][1](A,xTilde,args[1:(configurationProjection[CHOICE][2]-MINIMAL_NUMBER_OF_ARGUMENTS)]...)
 end

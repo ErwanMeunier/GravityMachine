@@ -39,7 +39,7 @@ mutable struct tListDisplay
     XInt  :: Vector{Int64};    YInt  :: Vector{Int64}   # liste des points (x,y) entiers
     XProj :: Vector{Float64};  YProj :: Vector{Float64} # liste des points (x,y) projetes
     XFeas :: Vector{Int64};    YFeas :: Vector{Int64}   # liste des points (x,y) admissibles
-    XPert :: Vector{Int64};    YPert :: Vector{Int64}   # liste des points (x,y) perturbes
+    XPert :: Vector{Float64};    YPert :: Vector{Float64}   # liste des points (x,y) perturbes
 end
 
 

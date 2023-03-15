@@ -60,7 +60,7 @@ function perturbSolution30!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1},
     T::Int64 = 10
     # liste des candidats (valeur, indice) et tri decroissant
     nbvar = length(vg[k].sInt.x)
-    idxTilde0, idxTilde1 = split01(vg[k].sInt.x)
+    #idxTilde0, idxTilde1 = split01(vg[k].sInt.x)
 
     #candidats=[( abs( vg[k].sPrj.x[i] - vg[k].sInt.x[i] ) , i ) for i=1:nbvar if vg[k].sPrj.x[i]>0 && vg[k].sPrj.x[i]<1]
 
@@ -115,25 +115,26 @@ function perturbSolution30!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1},
 end
 
 
-function perturbSolution40!(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64}, c2::Vector{Int64}, d::tListDisplay,λ1::Vector{Float64},λ2::Vector{Float64},γ::Float64)
+function perturbSolution40!(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64}, c2::Vector{Int64}, d::tListDisplay,λ1::Vector{Float64},λ2::Vector{Float64},γ::Float64=0.5)
     nbvar::Int64 = length(vg[k].sInt.x)
-    T::Float64 = 1.
-    limitPerturb::Int64 = Int64(ceil(T*nbvar))
+    T::Float64 = 1
+    limitPerturb::Int64 = Int64(ceil(T*nbvar/sum(c1)))
     # liste des candidats (valeur, indice) et tri decroissant
     
     #idxTilde0, idxTilde1 = split01(vg[k].sInt.x)
 
     #candidats=[( abs( vg[k].sPrj.x[i] - vg[k].sInt.x[i] ) , i ) for i=1:nbvar if vg[k].sPrj.x[i]>0 && vg[k].sPrj.x[i]<1]
     
-    utilities::Vector{Float64} = [c1[i]+c2[i] for i in 1:nbvar]
+    utilities::Vector{Float64} = [λ1[k]*c1[i]+λ2[k]*c2[i] for i in 1:nbvar]
     maxU::Float64 = maximum(utilities)
-    map!(x->x/maxU,utilities,utilities) # normalized utilities
+    map!(x->x/(maxU+1),utilities,utilities) # normalized utilities
     proba::Vector{Float64} = [(vg[k].sInt.x[i]==1 ? utilities[i] : 1-utilities[i]) for i in 1:nbvar]
     #println("Probabilities : ", proba)
-    seq::Vector{Int64} = sortperm(proba,rev=true)
+    #seq::Vector{Int64} = sortperm(proba,rev=true)
+    seq = shuffle(1:nbvar)
     nbflipped::Int64 = 0
     # independant random draw
-    
+    #=
     fig1, ax1 = plt.subplots()
     plt.plot(1:nbvar,[sum([proba[i]*(vg[k].sInt.x[i]==1 ? c1[i] : -(c1[i])) for j=1:i]) for i=1:nbvar])
     plt.show()
@@ -144,18 +145,18 @@ function perturbSolution40!(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64}
     plt.show()
     plt.savefig(string(k)*"c2.png")
     plt.close(fig2)
-    
+    =#
     for i in seq
-        if rand() <= (1/2 + γ*( 1/2 + proba[i] )) # γ is very important determine the quantity of "randomness" in the "flipping process"
+        if rand() <= (1/2 + γ*( proba[i] -1/2)) # γ is very important by fixing the quantity of "randomness" in the "flipping process"
             nbflipped += 1
             if vg[k].sInt.x[i] == 1
                 vg[k].sInt.x[i] = 0
-                vg[k].sInt.y[1] = vg[k].sInt.y[1] - c1[i]
-                vg[k].sInt.y[2] = vg[k].sInt.y[2] - c2[i]
+                vg[k].sInt.y[1] -= c1[i]
+                vg[k].sInt.y[2] -= c2[i]
             else
                 vg[k].sInt.x[i] = 1
-                vg[k].sInt.y[1] = vg[k].sInt.y[1] + c1[i]
-                vg[k].sInt.y[2] = vg[k].sInt.y[2] + c2[i]
+                vg[k].sInt.y[1] += c1[i]
+                vg[k].sInt.y[2] += c2[i]
             end            
         end
         nbflipped > limitPerturb ? (println("BREAK"); break) : nothing 
@@ -182,4 +183,53 @@ function perturbSolution40!(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64}
 #    @show vg[k].sInt.x
 
     return nothing
+end
+
+# TODO the returned vector will be very sparse...
+# Returns the number of 
+function redundantVar(solutions::Vector{Vector{Float64}})::Tuple{Vector{Int64},Vector{Int64}}
+    n::Int = length(solutions[1]) # number of variables
+    m::Int = length(solutions) # number of solutions
+    allequal::Vector{Bool} = trues(n)
+    nbEqual::Vector{Int} = zeros(n)
+    for i in 1:n
+        k::Int = 2
+        while allequal[i] && k<=m
+            allequal[i] &= (solutions[1][i] == solutions[k][i]) && (isapprox(solutions[k][i],0;atol=10^-3) || isapprox(solutions[k][i],1;atol=10^-3))
+            nbEqual[i] += 1
+            k+=1
+        end
+        !allequal[i] ? nbEqual[i]=0 : nothing
+    end
+    return nbEqual, convert.(Int,round.(solutions[1]))
+end
+
+
+function perturbSolutionInt!(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64}, c2::Vector{Int64}, d::tListDisplay, antecedentPoint::Vector{Vector{Int}})
+    redundantVar::Vector{Int}, associatedValues::Vector{Int} = redundantVar(antecedentPoint)
+    maxRV = maximum(redundantVar)
+    normalizedRedudantVar::Vector{Float64} = collect(map(x->(x+1)/(maxRV+1),redundantVar))
+
+    for i in eachindex(vg[k].sInt.x)
+        if rand() <= normalizedRedudantVar[i]
+            vg[k].sInt.x[i] = 1-vg[k].sInt.x[i] 
+            if vg[k].sInt.x[i]==1 # => previously set to zero
+                vg[k].sInt.y[1] += c1[i]
+                vg[k].sInt.y[2] += c2[i]
+            else # => previously set to one
+                vg[k].sInt.y[1] -= c1[i]
+                vg[k].sInt.y[2] -= c2[i]
+            end 
+        end
+    end
+
+    if generateurVisualise == -1 
+        # archivage pour tous les generateurs
+        push!(d.XPert,vg[k].sInt.y[1])
+        push!(d.YPert,vg[k].sInt.y[2])
+    elseif generateurVisualise == k
+        # archivage seulement pour le generateur k
+        push!(d.XPert,vg[k].sInt.y[1])
+        push!(d.YPert,vg[k].sInt.y[2])
+    end     
 end
