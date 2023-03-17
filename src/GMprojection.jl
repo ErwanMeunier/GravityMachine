@@ -171,23 +171,31 @@ function Δ2SPABelgique2(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
 
     proj::Model = Model(GLPK.Optimizer)
     @variable(proj, 0.0 <= x[1:length(xTilde)] <= 1.0)
-    @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1)) 
+    if nbCycles > 0
+        idx0attrac, idx1attrac = split01(knownSol)
+        @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1) 
+                                + nbCycles*(sum(cλ[i]*x[i] for i in idx1attrac)+sum(cλ[i]*(1-x[i]) for i in idx0attrac))
+                  )
+    else
+        @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1)) 
+    end
     @constraint(proj, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)    
     optimize!(proj)
 
     xOutput = value.(x)
     [set_binary(proj[:x][i]) for i=1:length(xTilde) if !(isapprox(xOutput[i],0,atol=10^-3)||isapprox(xOutput[i],1,atol=10^-3))]
     
-    optimize!(proj)
-
+    #=
     if nbCycles > 0 
         println("Modifying the model used in the projection in order to avoid reaching the known solution twice")
-        xOutput = value.(x)
+        #xOutput = value.(x)
         idxTilde0KnownSol, idxTilde1KnownSol = split01(knownSol)
-        [set_binary(proj[:x][i]) for i in 1:nbvar]
+        #[set_binary(proj[:x][i]) for i in 1:nbvar]
         @constraint(proj, diffToKnownSolution, sum(x[i] for i in idxTilde0KnownSol)+sum(x[i] for i in idxTilde1KnownSol)<=nbvar-1)
-        optimize!(proj)
     end
+    =#
+    optimize!(proj)
+    
 
     return objective_value(proj), value.(x)
 end

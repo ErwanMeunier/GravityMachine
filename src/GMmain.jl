@@ -19,8 +19,8 @@ if savegraphic
 end
 
 # Display dinamically (step-by-step) the inner operations of gravity machine 
-const slowexec = false
-const slowtime = 0.5
+const slowexec = true
+const slowtime = 1.
 # ---
 
 const plotGenerators = true
@@ -29,6 +29,8 @@ global generateurVisualise = -1
 global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
+
+global maxRatioBinaryVariables::Float64 = 1.# Must be between 0 and 1 meaning 0% to 100%
 
 verbose ? println("-) Active les packages requis\n") : nothing
 using JuMP, GLPK, PyPlot, Printf, Random
@@ -356,6 +358,7 @@ end
 macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
     quote
         if $(esc(graphic)) 
+            $(esc(slowexec)) ? sleep($(esc(slowtime))) : nothing # slowing the display
             arrowBaseX::Float64 = $(esc(xbefore))
             arrowBaseY::Float64 = $(esc(ybefore))
             $(esc(expr))
@@ -385,7 +388,18 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
         @variable(model, 0<=x[1:nbvar]<=1)
         @objective(model, Min, sum(cλ[j]*x[j] for j in 1:nbvar))
         @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
-        [set_binary(model[:x][i]) for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0,atol=10^-3)||isapprox(vg[k].sRel.x[i],1,atol=10^-3))]
+
+        #maxRatioBinaryVariables
+
+        idxNonInt::Vector{Int} = [i for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0.,atol=10^-3)||isapprox(vg[k].sRel.x[i],1.,atol=10^-3))]
+
+        idxNonInt = sort(idxNonInt, by=i->abs(vg[k].sRel.x[i]-1/2)) # The more x is close to 1/2 the more it is lucky to become a binary variable
+
+        nbBinVar = Int(ceil((maxRatioBinaryVariables * nbvar)))
+
+        for i in idxNonInt[1:min(end,nbBinVar)]
+            set_binary(model[:x][i])
+        end
         
         optimize!(model)
 
@@ -399,12 +413,12 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
             ajouterXtilde!(vg, k, convert.(Int, round.(vg[k].sRel.x)), convert.(Int, round.(vg[k].sRel.y)))
             if generateurVisualise == -1 
                 # archivage pour tous les generateurs
-                push!(d.XFeas,vg[k].sRel.y[1])
-                push!(d.YFeas,vg[k].sRel.y[2])
+                push!(d.XFeas,round(vg[k].sRel.y[1]))
+                push!(d.YFeas,round(vg[k].sRel.y[2]))
             elseif generateurVisualise == k
                 # archivage seulement pour le generateur k
-                push!(d.XFeas,vg[k].sRel.y[1])
-                push!(d.YFeas,vg[k].sRel.y[2])
+                push!(d.XFeas,round(vg[k].sRel.y[1]))
+                push!(d.YFeas,round(vg[k].sRel.y[2]))
             end 
         else
             println("Le générateur amélioré ", k, " n'est pas admissible")
@@ -588,7 +602,7 @@ function GM( fname::String,
         while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
             H::Vector{Vector{Int}} = Vector{Vector{Int}}()
             trial+=1
-            α = 1.# 1/(2^(trial-1))
+            α = 1.#1/(2^(trial-1)) # TODO
             β = 0.#0.4 + 0.6*trial/maxTrial
             γ = 1.
             nbcyclesMax = max(nbcyclesMax,nbcycles)
@@ -596,7 +610,11 @@ function GM( fname::String,
             println("   β = ", β)
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
             temphist = vg[k].sInt 
-            @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,vg[k].sInt.x,nbcyclesSameSol) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
+            if nbcyclesSameSol > 0 
+                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,vg[k].sInt.x,nbcyclesSameSol) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
+            else
+                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,vg[k].sInt.x,nbcyclesSameSol) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
+            end
             #slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
             #if isFeasible(vg,k) && 
@@ -605,11 +623,11 @@ function GM( fname::String,
                     push!(antecedantPoint[Int.(vg[k].sPrj.x)],copy(vg[k].sInt.x))
                     vg[k].sFea = false
                     #@makearrow perturbSolutionInt!(vg,k,c1,c2,d,antecedentPoint[vg[k].sInt.x]) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "pink"
-                    @makearrow perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,1.) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "cyan"
+                    @makearrow perturbSolution45!(vg,k,c1,c2,d,λ1,λ2,nbcyclesSameSol,antecedantPoint[Int.(vg[k].sPrj.x)],1.) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "cyan"
                     nbcyclesSameSol += 1
                 else # the new solution is added to the tabulist
                     antecedantPoint[vg[k].sPrj.x] = [Int.(vg[k].sInt.x)]
-                    #push!(solutionsHist,copy(vg[k].sInt.x))
+                    #push!(solutionsHist,copy(vg[k].sPrj.x))
                     #antecedentPoint[copy(vg[k].sInt.x)] = [copy(vg[k].sInt.x)] # initializer
                 end
             else
