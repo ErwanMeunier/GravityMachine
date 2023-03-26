@@ -7,7 +7,7 @@ println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 const verbose = true
 
 # Figures
-const graphic = true
+const graphic = false
 const savegraphic = false # set to false by default
 const savingDir = "./results/figuresSol/"
 
@@ -31,7 +31,7 @@ global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 global CHOICE_PERTUBATION = 2 # FROM 1 TO 3
-global CONES_CONSTRAINED_IMPROVE_GENERATORS = true
+global CONES_CONSTRAINED_IMPROVE_GENERATORS = false
 
 global maxRatioBinaryVariables::Float64 = 1.# Must be between 0 and 1 meaning 0% to 100%
 
@@ -243,6 +243,8 @@ macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
             dY::Float64 = $(esc(yafter)) - arrowBaseY
             println(dX,dY)
             arrow(arrowBaseX, arrowBaseY, dX, dY, color=$(color))
+        else 
+            $(esc(expr))
         end
     end
 end

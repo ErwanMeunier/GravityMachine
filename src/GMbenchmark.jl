@@ -8,6 +8,8 @@ const maxTrial = 20
 const maxTime = 20
 
 function benchmarkGM()
+    #
+    #
     filenames::Vector{String} = readdir(instanceDirectory)
     qualities = Vector{Float64}()
     nbcyclestotalVect = Vector{Int64}()
