@@ -1,0 +1,118 @@
+Number of variables set binary:7
+45.06118.5
+Admissibilité du générateur amélioré 1
+k=2
+Generator : 1
+y1=24492
+y2=48051
+Number of variables set binary:13
+2143.7829999999994-12271.779000000002
+Le générateur amélioré 2 n'est pas admissible
+k=3
+Generator : 1
+
+Number of variables set binary:34
+2449.2299999999996-6513.555
+Admissibilité du générateur amélioré 3
+k=4
+
+Number of variables set binary:39
+3693.1169999999984-4522.187999999998
+Le générateur amélioré 4 n'est pas admissible
+k=5
+
+Number of variables set binary:43
+3546.9900000000016-1142.7180000000008
+Admissibilité du générateur amélioré 5
+k=6
+
+Number of variables set binary:42
+2858.4209999999985-152.9969999999994
+Admissibilité du générateur amélioré 6
+k=7
+
+Number of variables set binary:46
+-2072.71199999999953676.7039999999997
+Admissibilité du générateur amélioré 7
+k=8
+
+Number of variables set binary:47
+-4679.0460000000023496.718999999999
+Le générateur amélioré 8 n'est pas admissible
+k=9
+
+Number of variables set binary:45
+-7121.0539999999962739.026
+Le générateur amélioré 9 n'est pas admissible
+k=10
+
+Number of variables set binary:46
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+BVAR :43749
+TRANSFORMING LOWER BOUNDED SET
+k=1
+Number of variables set binary:7
+45.06118.5
+Admissibilité du générateur amélioré 1
+k=2
+Generator : 1
+y1=24492
+y2=48051
+Number of variables set binary:13
+2143.7829999999994-12271.779000000002
+Le générateur amélioré 2 n'est pas admissible
+k=3
+Generator : 1
+y1=24492
+y2=48051
+Number of variables set binary:34
+2449.2299999999996-6513.555
+Admissibilité du générateur amélioré 3
+k=4
+Generator : 1
+y1=24492
+y2=48051
+Generator : 3
+y1=27171
+y2=24156
+Number of variables set binary:39
+3693.1169999999984Exception in Tkinter callback
+-4522.187999999998
+Le générateur amélioré 4 n'est pas admissible
+k=5
+Generator : 1
+y1=24492
+y2=48051
+Generator : 3
+y1=27171
+y2=24156
+Number of variables set binary:43
+3546.9900000000016-1142.7180000000008
+Admissibilité du générateur amélioré 5
+k=6
+Generator : 1
+y1=24492
+y2=48051
+Generator : 3
+y1=27171
+y2=24156
+Generator : 5
+y1=32139
+y2=18258
+Number of variables set binary:42
+2783.4209999999985-164.9969999999994
+Admissibilité du générateur amélioré 6
+k=7
+Generator : 1
+y1=24492
+y2=48051
+Generator : 3
+y1=27171
+y2=24156
+Generator : 5
+y1=32139
+y2=18258
+Generator : 6
+y1=32139
+y2=18258
+Number of variables set binary:46

@@ -1,4 +1,4 @@
-const MINIMAL_NUMBER_OF_ARGUMENTS::Int = 2 # must be fixed by the programmer
+const MINIMAL_NUMBER_OF_ARGUMENTS_PROJ::Int = 2 # must be fixed by the programmer
 # Tools
 function computeCλ(k::Int,λ1::Vector{Float64},λ2::Float64,c1::Float64,c2::Float64, guided::Bool)::Vector{Float64}
     guided ? (1+α*(λ1[k]-1)).*c1 + (1+α*(λ2[k]-1)).*c2 : ones(length(c1))
@@ -6,13 +6,13 @@ end
 
 # ============================Some tools================================================
 # Self-explanatory
-function computeLocalNadirs(vg::Vector{tGenerateur}, L::Vector{tSolution{Float64}})::Vector{tPoint}
-    @assert length(vg)>2 "vg must be of size greater or equal than 3"
-    nadirs::Vector{tPoint} = Vector{tPoint}(undef, length(vg))
+function computeLocalNadirs(L::Vector{tSolution{Float64}})::Vector{tPoint}
+    @assert length(L)>2 "vg must be of size greater or equal than 3"
+    nadirs::Vector{tPoint} = Vector{tPoint}(undef, length(L))
     nadirs[1] = tPoint(L[end].y[1],L[1].y[2]) # global nadir
     nadirs[end] = nadirs[1]
-    for k = 2:(length(vg)-1)
-        nadirs[k] = tPoint(max(vg[k-1].sRel.y[1],vg[k+1].sRel.y[1]),max(vg[k-1].sRel.y[2],vg[k+1].sRel.y[2]))
+    for k = 2:(length(L)-1)
+        nadirs[k] = tPoint(L[k+1].sRel.y[1], L[k-1].sRel.y[2])
     end
     return nadirs
 end
@@ -161,7 +161,7 @@ nbCycles : Number of times where the projection reach an already known solution
 
 =#
 function Δ2SPABelgique2(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
-    c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, knownSol::Vector{Int}, nbCycles::Int)
+    c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, solutionsHist::Set{Vector{Int}}, knownSol::Vector{Int}, nbCycles::Int)
 
     nbctr = size(A,1)
     nbvar = size(A,2)
@@ -173,13 +173,19 @@ function Δ2SPABelgique2(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
     @variable(proj, 0.0 <= x[1:length(xTilde)] <= 1.0)
     if nbCycles > 0
         idx0attrac, idx1attrac = split01(knownSol)
-        @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1) 
-                                + nbCycles*(sum(cλ[i]*x[i] for i in idx1attrac)+sum(cλ[i]*(1-x[i]) for i in idx0attrac))
+        @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1)
+                                +nbCycles*(sum(cλ[i]*x[i] for i in idx1attrac)+sum(cλ[i]*(1-x[i]) for i in idx0attrac))
                   )
     else
         @objective(proj, Min, sum(cλ[i]*x[i] for i in idxTilde0) + sum(cλ[i]*(1-x[i]) for i in idxTilde1)) 
     end
     @constraint(proj, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)    
+    # diff constraint 
+    for sol in solutionsHist
+        N0, N1 = split01(sol)
+        @constraint(proj, sum(x[j] for j in N0) + sum(1-x[j] for j in N1) >= 1) # diff from knownSol does not work
+    end
+    # end - diff constraint
     optimize!(proj)
 
     xOutput = value.(x)
@@ -273,11 +279,11 @@ const configurationProjection::Dict{Int,Tuple{Function,Int}} = Dict{Int,Tuple{Fu
                                                                 2 => (Δ2SPAbis,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
                                                                 3 => (Δ2SPAbisCone,11), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, nadirs::Vector{tPoint}, vg::Vector{tGenerateur}, β::Float64)
                                                                 4 => (Δ2SPABelgique,8), # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64)
-                                                                5 => (Δ2SPABelgique2,10) # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, knownSol::Vector{Int})
+                                                                5 => (Δ2SPABelgique2,11) # (A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, λ1::Vector{Float64}, λ2::Vector{Float64}, α::Float64, solutionsHist::Set{Vector{Int}, knownSol, nbCycles})
                                                             )
 
 # args are in fact additional arguments
 function interface_projection!(A::Array{Int,2},xTilde::Vector{Int},args::Vararg{Any}=Typle{Any}();CHOICE::Int=CHOICE_PROJECTION) 
-    @assert configurationProjection[CHOICE][2] <= (MINIMAL_NUMBER_OF_ARGUMENTS + length(args)) "Bad number of arguments for such a projection"
-    return configurationProjection[CHOICE][1](A,xTilde,args[1:(configurationProjection[CHOICE][2]-MINIMAL_NUMBER_OF_ARGUMENTS)]...)
+    @assert configurationProjection[CHOICE][2] <= (MINIMAL_NUMBER_OF_ARGUMENTS_PROJ + length(args)) "Bad number of arguments for such a projection"
+    return configurationProjection[CHOICE][1](A,xTilde,args[1:(configurationProjection[CHOICE][2]-MINIMAL_NUMBER_OF_ARGUMENTS_PROJ)]...)
 end

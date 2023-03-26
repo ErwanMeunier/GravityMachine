@@ -1,3 +1,4 @@
+using Revise # allowing the redefinition of constant variables while compiling and executing 
 # ==============================================================================
 # The gravity machine (Man of Steel) -> to terraform the world
 
@@ -19,8 +20,8 @@ if savegraphic
 end
 
 # Display dinamically (step-by-step) the inner operations of gravity machine 
-const slowexec = true
-const slowtime = 1.
+const slowexec = false
+const slowtime = 0.
 # ---
 
 const plotGenerators = true
@@ -29,6 +30,8 @@ global generateurVisualise = -1
 global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
+global CHOICE_PERTUBATION = 2 # FROM 1 TO 3
+global CONES_CONSTRAINED_IMPROVE_GENERATORS = true
 
 global maxRatioBinaryVariables::Float64 = 1.# Must be between 0 and 1 meaning 0% to 100%
 
@@ -90,10 +93,10 @@ end
 # ==============================================================================
 # Elabore 2 ensembles d'indices selon que xTilde[i] vaut 0 ou 1
 
-function split01(xTilde::Array{Int,1})
+function split01(xTilde::Vector{Int})
 
-   indices0 = Vector{Int64}()
-   indices1 = Vector{Int64}()
+   indices0::Vector{Int64} = Vector{Int64}()
+   indices1::Vector{Int64} = Vector{Int64}()
 
    sizehint!(indices0,length(xTilde))
    sizehint!(indices1,length(xTilde))
@@ -227,132 +230,6 @@ macro timeout(seconds, expr, fail)
     end
 end
 
-# ==============================================================================
-# elabore pC le pointeur du cone ouvert vers L
-
-function elaborePointConeOuvertversL(vg::Vector{tGenerateur}, k::Int64, pB::tPoint, pA::tPoint)
-
-    # recupere les coordonnees du point projete
-    pC=tPoint(vg[k].sPrj.y[1], vg[k].sPrj.y[2])
-
-    # etablit le point nadir pN au depart des points pA et pB adjacents au generateur k
-    pN = tPoint( pA.x , pB.y )
-
-#    print("Coordonnees du cone 2 : ")
-#    @show pC, pN
-
-    # retient pN si pC domine pN (afin d'ouvrir le cone)
-    if (pC.x < pN.x)  &&  (pC.y < pN.y)
-        # remplace pC par pN
-        pC=tPoint( pA.x , pB.y )
-    end
-
-    return pC
-end
-
-
-# ==============================================================================
-#= Retourne un booléen indiquant si un point se trouve dans un secteur défini dans
-  le sens de rotation trigonométrique (repère X de gauche à droite, Y du haut vers
-  le bas).
-  https://www.stashofcode.fr/presence-dun-point-dans-un-secteur-angulaire/#more-328
-  M    Point dont la position est à tester (point resultant a tester)
-  O    Point sommet du secteur (point generateur)
-  A    Point de départ du secteur (point adjacent inferieur)
-  B    Point d'arrivée du secteur (point adjacent superieur)
-  sortie : Booléen indiquant si le point est dans le secteur ou non.
-
-  Exemple :
-
-  B=point(2.0,1.0)
-  O=point(2.5,2.5)
-  A=point(5.0,5.0)
-
-  M=point(5.0,4.0)
-  inSector(M, O, A, B)
-=#
-
-function inSector(M, O, A, B)
-
-    cpAB = (A.y - O.y) * (B.x - O.x) - (A.x - O.x) * (B.y - O.y)
-    cpAM = (A.y - O.y) * (M.x - O.x) - (A.x - O.x) * (M.y - O.y)
-    cpBM = (B.y - O.y) * (M.x - O.x) - (B.x - O.x) * (M.y - O.y)
-
-    if (cpAB > 0)
-        if ((cpAM > 0) && (cpBM < 0))
-            return true
-        else
-            return false
-        end
-    else
-        if (!((cpAM < 0) && (cpBM > 0)))
-            return true
-        else
-            return false
-        end
-    end
-end
-
-function inCone(pOrg, pDeb, pFin, pCur)
-    # pOrg : point origine du cone (la ou il est pointe)
-    # pDeb : point depart du cone (point du rayon [pOrg,pDeb])
-    # pFin : point final du cone (point du rayon [pOrg,pFin])
-    # pCur : point courant a tester
-    # retourne VRAI si pCur est dans le cone pDeb-pFin-pOrg, FAUX sinon
-
-    cp_pDeb_pFin = (pDeb.x - pOrg.x) * (pFin.y - pOrg.y) - (pDeb.y - pOrg.y) * (pFin.x - pOrg.x)
-    cp_pDeb_pCur = (pDeb.x - pOrg.x) * (pCur.y - pOrg.y) - (pDeb.y - pOrg.y) * (pCur.x - pOrg.x)
-    cp_pFin_pCur = (pFin.x - pOrg.x) * (pCur.y - pOrg.y) - (pFin.y - pOrg.y) * (pCur.x - pOrg.x)
-
-    if (cp_pDeb_pFin > 0)
-        if ((cp_pDeb_pCur >= 0) && (cp_pFin_pCur <= 0))
-            return true
-        else
-            return false
-        end
-    else
-        if (!((cp_pDeb_pCur < 0) && (cp_pFin_pCur > 0)))
-            return true
-        else
-            return false
-        end
-    end
-end
-
-function inCone1VersZ(pOrg, pDeb, pFin, pCur)
-    return inCone(pOrg, pDeb, pFin, pCur)
-end
-
-function inCone2Vers0(pOrg, pDeb, pFin, pCur)
-    return !inCone(pOrg, pDeb, pFin, pCur)
-end
-
-
-# ==============================================================================
-# Selectionne les points pour le cone pointe sur le generateur k (pCour) et ouvert vers Y
-function selectionPoints(vg::Vector{tGenerateur}, k::Int64)
-    nbgen = size(vg,1)
-    if k==1
-        # premier generateur (point predecesseur fictif)
-        pPrec = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2]+1.0)
-        pCour = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2])
-        pSuiv = tPoint(vg[k+1].sRel.y[1], vg[k+1].sRel.y[2])
-    elseif k==nbgen
-        # dernier generateur (point suivant fictif)
-        pPrec = tPoint(vg[k-1].sRel.y[1], vg[k-1].sRel.y[2])
-        pCour = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2])
-        pSuiv = tPoint(vg[k].sRel.y[1]+1.0, vg[k].sRel.y[2])
-    else
-        # generateur non extreme
-        pPrec = tPoint(vg[k-1].sRel.y[1], vg[k-1].sRel.y[2])
-        pCour = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2])
-        pSuiv = tPoint(vg[k+1].sRel.y[1], vg[k+1].sRel.y[2])
-    end
-#    print("Coordonnees du cone 1 : ")
-#    @show pPrec, pCour, pSuiv
-    return pPrec, pCour, pSuiv
-end
-
 # ==============================MACROS FOR PLOTTING ARROWS============================
 
 macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
@@ -375,28 +252,78 @@ end
 # ==============================================================================
 # Forces non-integers variables to be integer. Integer variables may become
 
-function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay)::Vector{tSolution{Float64}}
+function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::Vector{tSolution{Float64}}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay)::Vector{tSolution{Float64}}
     nbvar::Int = size(A,2)
     nbctr::Int = size(A,1)
+    println("NBVAR :", nbvar)
     println("TRANSFORMING LOWER BOUNDED SET")
+    nadir = tPoint(L[end].y[1],L[1].y[2])
+    nbgen = length(L)
     for k in eachindex(vg)
         #cλ::Vector{Float64} = λ1[k].*c2 + λ2[k].*c1 
-
+        println("k=",k)
         cλ::Vector{Float64} = λ1[k].*c1 + λ2[k].*c2 # 
 
         model::Model = Model(GLPK.Optimizer)
         @variable(model, 0<=x[1:nbvar]<=1)
+        
         @objective(model, Min, sum(cλ[j]*x[j] for j in 1:nbvar))
         @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
 
+        @expression(model, z1, sum(c1[j]*x[j] for j in 1:nbvar))
+        @expression(model, z2, sum(c2[j]*x[j] for j in 1:nbvar))
+        
+        if CONES_CONSTRAINED_IMPROVE_GENERATORS && (1<k) && (k<nbgen)
+            u = tPoint(L[k-1].y[1],L[k-1].y[2])
+            v = tPoint(L[k+1].y[1],L[k+1].y[2])
+            if k==2
+                α2 = (nadir.y - v.y)/(nadir.x - v.x)
+                β2 = nadir.y - α2*nadir.x
+                @constraint(model, z2 <= nadir.y) # TODO: can be lower bounded
+                @constraint(model, α2*z1+β2 <= z2)
+            elseif k==(nbgen-1)
+                α1 = (nadir.y - u.y)/(nadir.x - u.x)
+                β1 = nadir.y - α1*nadir.x
+                @constraint(model, α1*z1+β1 >= z2)
+                @constraint(model, z1 <= nadir.x) # TODO: can be upper bounded
+            else 
+                α1 = (nadir.y - u.y)/(nadir.x - u.x)
+                β1 = nadir.y - α1*nadir.x
+                α2 = (nadir.y - v.y)/(nadir.x - v.x)
+                β2 = nadir.y - α2*nadir.x
+                @constraint(model, α1*z1+β1 >= z2)
+                @constraint(model, α2*z1+β2 <= z2)
+            end
+        end
+        idx = [l for l in 1:(max(1,k-1)) if vg[l].sFea]
+        #println("INDEX : ", idx)
+
+        for q in idx
+            N0, N1 = split01(vg[q].sInt.x)
+            println("Generator : ", q)
+            println("y1=", vg[q].sInt.y[1])
+            println("y2=", vg[q].sInt.y[2])
+            #=
+            @expression(model, obj1[q], sum(c1[j]*x[j] for j in 1:nbvar))
+            @expression(model, obj2[q], sum(c2[j]*x[j] for j in 1:nbvar))
+
+            @constraint(model, vg[q].sInt.y[1] <= obj1)
+            @constraint(model, vg[q].sInt.y[2] <= obj2)
+            =#
+            @constraint(model, sum(x[j] for j in N0) + sum(1-x[j] for j in N1) >= 1)
+            #rightMember = 0.001*sum(cλ)
+            #sum(cλ[j]*x[j] for j in N0) + sum(cλ[j] for j in N1)
+            #@constraint(model, sum(cλ[j]*x[j] for j in N0) + sum(cλ[j]*(1-x[j]) for j in N1) >= 1)
+        end
+        
         #maxRatioBinaryVariables
-
+        
         idxNonInt::Vector{Int} = [i for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0.,atol=10^-3)||isapprox(vg[k].sRel.x[i],1.,atol=10^-3))]
-
+        println("Number of non integral variables:", length(idxNonInt))
         idxNonInt = sort(idxNonInt, by=i->abs(vg[k].sRel.x[i]-1/2)) # The more x is close to 1/2 the more it is lucky to become a binary variable
 
-        nbBinVar = Int(ceil((maxRatioBinaryVariables * nbvar)))
-
+        nbBinVar = Int(ceil((maxRatioBinaryVariables * length(idxNonInt))))
+        println("Number of variables set integral: ", nbBinVar)
         for i in idxNonInt[1:min(end,nbBinVar)]
             set_binary(model[:x][i])
         end
@@ -425,7 +352,21 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, λ1
         end
     end
     
-    return [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)] #  (new) improved Lower Bound Set
+    #=println("Number of diff values: ", 
+        length([v for v in redundantVar([Float64.(vg[l].sInt.x) for l in eachindex(vg) if vg[l].sFea])[1] if v==0])
+        )=#
+    println("FIN DE L AMELIORATION")
+    Limproved = [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)]
+    #Lrounded = [tSolution(round.(g.x)) for g in Limproved]
+    for k in eachindex(vg)
+        println("[",Limproved[k].y[1],";",Limproved[k].y[2],"]")
+        g = Limproved[k].x
+        restrictedLimproved = [convert.(Bool, round.(Limproved[i].x)) for i in eachindex(vg) if i!=k]
+        #println("Coordonnées à 1: ", findall(convert.(Bool, round.(g))))
+        println("Générateur courant a déjà une solution soeur: ", convert.(Bool, round.(g)) in restrictedLimproved)
+    end
+    #break # TO BE REMOVED
+    return Limproved #  (new) improved Lower Bound Set
 end
 
 # point d'entree principal
@@ -545,7 +486,7 @@ function GM( fname::String,
     λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(L,vg)
     verbose ? println("---> Directions computed") : nothing
     
-    Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,λ1,λ2,c1,c2,d)
+    Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,L,λ1,λ2,c1,c2,d)
     verbose ? println("---> Generators improved") : nothing
 
     λ1, λ2 = interface_computeDirections(L,vg) # TODO: with new generators
@@ -611,9 +552,9 @@ function GM( fname::String,
             # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
             temphist = vg[k].sInt 
             if nbcyclesSameSol > 0 
-                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,vg[k].sInt.x,nbcyclesSameSol) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
+                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,solutionsHist,vg[k].sPrj.y[1],nbcyclesSameSol) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
             else
-                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,vg[k].sInt.x,nbcyclesSameSol) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
+                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,solutionsHist,fill(0,length(vg[k].sRel.x)),nbcyclesSameSol) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
             end
             #slowexec ? sleep(slowtime) : nothing
             println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
@@ -626,9 +567,9 @@ function GM( fname::String,
                     @makearrow perturbSolution45!(vg,k,c1,c2,d,λ1,λ2,nbcyclesSameSol,antecedantPoint[Int.(vg[k].sPrj.x)],1.) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "cyan"
                     nbcyclesSameSol += 1
                 else # the new solution is added to the tabulist
-                    antecedantPoint[vg[k].sPrj.x] = [Int.(vg[k].sInt.x)]
-                    #push!(solutionsHist,copy(vg[k].sPrj.x))
-                    #antecedentPoint[copy(vg[k].sInt.x)] = [copy(vg[k].sInt.x)] # initializer
+                    #antecedantPoint[vg[k].sPrj.x] = [Int.(vg[k].sInt.x)]
+                    push!(solutionsHist,Int.(vg[k].sPrj.x))
+                    antecedantPoint[Int.(vg[k].sPrj.x)] = [Int.(vg[k].sInt.x)] # initializer
                 end
             else
                 # rounding solution : met a jour sInt dans vg --------------------------
@@ -787,7 +728,7 @@ end=#
 #@time GM("sppaa02.txt", 6, 20, 20)
 #@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
 #@time GM("sppnw01.txt", 6, 20, 20)
-#@time GM("sppnw16.txt", 6, 20, 20)
+#@time GM("sppnw06.txt", 6, 20, 20)
 @time GM("sppnw31.txt", 6, 20, 20)
 #@time GM("sppnw30.txt", 6, 20, 20)
 #@time GM("sppnw40.txt", 6, 20, 20)

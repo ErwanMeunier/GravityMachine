@@ -1,3 +1,4 @@
+const MINIMAL_NUMBER_OF_ARGUMENTS_PERTUB = 5
 # ==============================================================================
 # applique une perturbation sur la solution entiere faisant l'objet d'un cycle
 
@@ -189,25 +190,8 @@ function redundantVar(solutions::Vector{Vector{Float64}})::Tuple{Vector{Int64},V
         end
         !allequal[i] ? nbEqual[i]=0 : nothing
     end
-    return nbEqual, convert.(Int,round.(solutions[1]))
-end
-
-function redundantVar2(solutions::Vector{Vector{Float64}})::Tuple{Vector{Int64},Vector{Int64}}
-    n::Int = length(solutions[1]) # number of variables
-    m::Int = length(solutions) # number of solutions
-    allequal::Vector{Bool} = trues(n)
-    nbEqual::Vector{Int} = zeros(n)
-    for i in 1:n
-        k::Int = 2
-        while allequal[i] && k<=m
-            allequal[i] &= (solutions[1][i] == solutions[k][i]) && (isapprox(solutions[k][i],0;atol=10^-3) || isapprox(solutions[k][i],1;atol=10^-3))
-            nbEqual[i] += 1
-            k+=1
-        end
-        !allequal[i] ? nbEqual[i]=0 : nothing
-    end
-    return nbEqual, convert.(Int,round.(solutions[1]))
-end
+    return nbEqual, convert.(Int,round.(solutions[1])) # TODO if not zer all the numbers are equal
+end 
 
 
 function perturbSolution45!(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64}, c2::Vector{Int64}, d::tListDisplay,λ1::Vector{Float64},λ2::Vector{Float64},nbcyclesSameSol::Int,antecedents::Vector{Vector{Float64}},γ::Float64=0.5)
@@ -298,4 +282,16 @@ function perturbSolutionInt!(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64
         push!(d.XPert,vg[k].sInt.y[1])
         push!(d.YPert,vg[k].sInt.y[2])
     end     
+end
+
+const configurationPertubation::Dict{Int,Tuple{Function,Int}} = Dict{Int,Tuple{Function,Int}}( # signature of each methods input format
+                                                                1 => (perturbSolution!, 5), #(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, d::tListDisplay)
+                                                                2 => (perturbSolution30!, 5),#(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, d::tListDisplay)
+                                                                3 => (perturbSolution40!, 9) #(vg::Vector{tGenerateur}, k::Int64, c1::Vector{Int64}, c2::Vector{Int64}, d::tListDisplay,λ1::Vector{Float64},λ2::Vector{Float64},nbcyclesSameSol::Int,γ::Float64=0.5)
+                                                                )
+
+# args are in fact additional arguments
+function interface_perturbation!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1}, c2::Array{Int,1}, d::tListDisplay, args::Vararg{Any}=Typle{Any}();CHOICE::Int=CHOICE_PERTUBATION) 
+    @assert configurationPerturbation[CHOICE][2] <= (MINIMAL_NUMBER_OF_ARGUMENTS_PERTURB + length(args)) "Bad number of arguments for such a pertubation"
+    return configurationPerturbation[CHOICE][1](vg,k,c1,c2,d,args[1:(configurationPerturbation[CHOICE][2]-MINIMAL_NUMBER_OF_ARGUMENTS_PERTUB)]...)
 end

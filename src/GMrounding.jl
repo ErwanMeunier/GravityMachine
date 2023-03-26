@@ -1,4 +1,130 @@
+# ===================Tools for rounding methods===============================
+# elabore pC le pointeur du cone ouvert vers L
+
+function elaborePointConeOuvertversL(vg::Vector{tGenerateur}, k::Int64, pB::tPoint, pA::tPoint)
+
+    # recupere les coordonnees du point projete
+    pC=tPoint(vg[k].sPrj.y[1], vg[k].sPrj.y[2])
+
+    # etablit le point nadir pN au depart des points pA et pB adjacents au generateur k
+    pN = tPoint( pA.x , pB.y )
+
+#    print("Coordonnees du cone 2 : ")
+#    @show pC, pN
+
+    # retient pN si pC domine pN (afin d'ouvrir le cone)
+    if (pC.x < pN.x)  &&  (pC.y < pN.y)
+        # remplace pC par pN
+        pC=tPoint( pA.x , pB.y )
+    end
+
+    return pC
+end
+
+
 # ==============================================================================
+#= Retourne un booléen indiquant si un point se trouve dans un secteur défini dans
+  le sens de rotation trigonométrique (repère X de gauche à droite, Y du haut vers
+  le bas).
+  https://www.stashofcode.fr/presence-dun-point-dans-un-secteur-angulaire/#more-328
+  M    Point dont la position est à tester (point resultant a tester)
+  O    Point sommet du secteur (point generateur)
+  A    Point de départ du secteur (point adjacent inferieur)
+  B    Point d'arrivée du secteur (point adjacent superieur)
+  sortie : Booléen indiquant si le point est dans le secteur ou non.
+
+  Exemple :
+
+  B=point(2.0,1.0)
+  O=point(2.5,2.5)
+  A=point(5.0,5.0)
+
+  M=point(5.0,4.0)
+  inSector(M, O, A, B)
+=#
+
+function inSector(M, O, A, B)
+
+    cpAB = (A.y - O.y) * (B.x - O.x) - (A.x - O.x) * (B.y - O.y)
+    cpAM = (A.y - O.y) * (M.x - O.x) - (A.x - O.x) * (M.y - O.y)
+    cpBM = (B.y - O.y) * (M.x - O.x) - (B.x - O.x) * (M.y - O.y)
+
+    if (cpAB > 0)
+        if ((cpAM > 0) && (cpBM < 0))
+            return true
+        else
+            return false
+        end
+    else
+        if (!((cpAM < 0) && (cpBM > 0)))
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function inCone(pOrg, pDeb, pFin, pCur)
+    # pOrg : point origine du cone (la ou il est pointe)
+    # pDeb : point depart du cone (point du rayon [pOrg,pDeb])
+    # pFin : point final du cone (point du rayon [pOrg,pFin])
+    # pCur : point courant a tester
+    # retourne VRAI si pCur est dans le cone pDeb-pFin-pOrg, FAUX sinon
+
+    cp_pDeb_pFin = (pDeb.x - pOrg.x) * (pFin.y - pOrg.y) - (pDeb.y - pOrg.y) * (pFin.x - pOrg.x)
+    cp_pDeb_pCur = (pDeb.x - pOrg.x) * (pCur.y - pOrg.y) - (pDeb.y - pOrg.y) * (pCur.x - pOrg.x)
+    cp_pFin_pCur = (pFin.x - pOrg.x) * (pCur.y - pOrg.y) - (pFin.y - pOrg.y) * (pCur.x - pOrg.x)
+
+    if (cp_pDeb_pFin > 0)
+        if ((cp_pDeb_pCur >= 0) && (cp_pFin_pCur <= 0))
+            return true
+        else
+            return false
+        end
+    else
+        if (!((cp_pDeb_pCur < 0) && (cp_pFin_pCur > 0)))
+            return true
+        else
+            return false
+        end
+    end
+end
+
+function inCone1VersZ(pOrg, pDeb, pFin, pCur)
+    return inCone(pOrg, pDeb, pFin, pCur)
+end
+
+function inCone2Vers0(pOrg, pDeb, pFin, pCur)
+    return !inCone(pOrg, pDeb, pFin, pCur)
+end
+
+
+# ==============================================================================
+# Selectionne les points pour le cone pointe sur le generateur k (pCour) et ouvert vers Y
+function selectionPoints(vg::Vector{tGenerateur}, k::Int64)
+    nbgen = size(vg,1)
+    if k==1
+        # premier generateur (point predecesseur fictif)
+        pPrec = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2]+1.0)
+        pCour = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2])
+        pSuiv = tPoint(vg[k+1].sRel.y[1], vg[k+1].sRel.y[2])
+    elseif k==nbgen
+        # dernier generateur (point suivant fictif)
+        pPrec = tPoint(vg[k-1].sRel.y[1], vg[k-1].sRel.y[2])
+        pCour = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2])
+        pSuiv = tPoint(vg[k].sRel.y[1]+1.0, vg[k].sRel.y[2])
+    else
+        # generateur non extreme
+        pPrec = tPoint(vg[k-1].sRel.y[1], vg[k-1].sRel.y[2])
+        pCour = tPoint(vg[k].sRel.y[1], vg[k].sRel.y[2])
+        pSuiv = tPoint(vg[k+1].sRel.y[1], vg[k+1].sRel.y[2])
+    end
+#    print("Coordonnees du cone 1 : ")
+#    @show pPrec, pCour, pSuiv
+    return pPrec, pCour, pSuiv
+end
+
+# =============================Rounding methods====================================
 
 # arrondi la solution correspondant au generateur (pas d'historique donc)
 # version avec cone inferieur seulement
@@ -10,7 +136,7 @@ function roundingSolution!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1}, 
     # --------------------------------------------------------------------------
     # identifie les variables fractionnaires et marquage par valeur sentinelle -1
     for i in 1:nbvar
-        if  isapprox(vg[k].sPrj.x[i] , 0.0, atol=1e-3)
+        if isapprox(vg[k].sPrj.x[i] , 0.0, atol=1e-3)
             vg[k].sInt.x[i] = 0
         elseif isapprox(vg[k].sPrj.x[i] , 1.0, atol=1e-3)
             vg[k].sInt.x[i] = 1
@@ -41,8 +167,8 @@ function roundingSolution!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1}, 
 
     print("Depart a arrondir : ")
     @show pPrec, pCour, pSuiv, pM
-    if length(vg[k].sPrj.x) ≤ 20 @show vg[k].sPrj.x end
-    if length(vg[k].sInt.x) ≤ 20 @show vg[k].sInt.x end
+    if length(vg[k].sPrj.x) ≤ 20 (@show vg[k].sPrj.x) end
+    if length(vg[k].sInt.x) ≤ 20 (@show vg[k].sInt.x) end
 
     nbVarNonEntiere = 0
     for i in 1:nbvar
@@ -232,7 +358,7 @@ function roundingSolutionNew23!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int
             vg[k].sInt.y[2] += c2[i]
         else
             vg[k].sInt.x[i] = -1
-            push!(lstIdxFrac,i)
+            push!(lstIdxFrac,i) # marquage par valeur sentinelle
         end
     end
 
