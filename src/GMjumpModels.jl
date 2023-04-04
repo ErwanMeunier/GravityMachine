@@ -9,7 +9,8 @@ function computeLinearRelax2SPA(  nbvar::Int,
                                   epsilon,
                                   obj::Int
 )
-  model = Model(GLPK.Optimizer)
+  model = Model(default_optimizer)
+  set_silent(model)
   @variable(model, 0.0 <= x[1:nbvar] <= 1.0 )
   @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
   if obj == 1
@@ -19,6 +20,7 @@ function computeLinearRelax2SPA(  nbvar::Int,
     @objective(model, Min, sum((c2[i])*x[i] for i in 1:nbvar))
     @constraint(model, sum((c1[i])*x[i] for i in 1:nbvar) <= epsilon)
   end
+  set_attribute(model, "primal_feasibility_tolerance", 1.)
   optimize!(model)
   return objective_value(model), value.(x)
 end
@@ -35,7 +37,8 @@ function computeLinearRelax2SPAInt(  nbvar::Int,
   epsilon,
   obj::Int
 )
-  model = Model(GLPK.Optimizer)
+  model = Model(default_optimizer)
+  set_silent(model)
   @variable(model, 0.0 <= x[1:nbvar] <= 1.0 )
   @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
   if obj == 1

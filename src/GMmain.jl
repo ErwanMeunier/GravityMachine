@@ -4,7 +4,7 @@ using Revise # allowing the redefinition of constant variables while compiling a
 
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
-const verbose = true
+const verbose = false
 
 # Figures
 const graphic = false
@@ -31,16 +31,21 @@ global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 global CHOICE_PERTUBATION = 2 # FROM 1 TO 3
-global CONES_CONSTRAINED_IMPROVE_GENERATORS = false
+global CONES_CONSTRAINED_IMPROVE_GENERATORS::Bool = false # see transformLowerBoundedSet
+global PERTUB_SAME_SOL_PROJECTION::Bool = false
 
-global maxRatioBinaryVariables::Float64 = 1.# Must be between 0 and 1 meaning 0% to 100%
+global IMPROVING_GENERATORS = true
+global THRESHOLD_BinVar::Int64 = typemax(Int64)
+global MAX_RATIO_BinVar_GENERATOR_IMPROVEMENT::Float64 = 1. # Ratio of bin variables set binary into the generator improvement ~ Must be between 0 and 1 meaning 0% to 100%
+global MAX_RATIO_BinVar_PROJECTION::Float64 = 1. # Ratio of bin variables set binary into the projection
 
 verbose ? println("-) Active les packages requis\n") : nothing
-using JuMP, GLPK, PyPlot, Printf, Random
+using JuMP, HiGHS, PyPlot, Printf, Random # some useful packages
+const default_optimizer = HiGHS.Optimizer # setting the default optimizer
 verbose ? println("  Fait \n") : nothing
 
 
-graphic ? (println("-) Mise en place de l'affichage\n") ; pygui(true); println(" Fait \n")) : nothing
+graphic && verbose ? (println("-) Mise en place de l'affichage\n") ; pygui(true); println(" Fait \n")) : nothing
 
 
 # ==============================================================================
@@ -153,14 +158,6 @@ function estAdmissible(x::Vector{Float64})::Bool
 end
 
 # ==============================================================================
-# Tests whether the given solution is feasible and not previously already starting from a previous generator, or not
-# Leads to a integer solution
-
-function estAdmissibleDiff(x::Vector{Float64}, d::tListDisplay)::Bool
-    #TODO
-end
-
-# ==============================================================================
 # calcule la performance z d'une solution x sur les 2 objectifs
 
 function evaluerSolution(x::Vector{Float64}, c1::Array{Int,1}, c2::Array{Int,1})
@@ -254,121 +251,135 @@ end
 # ==============================================================================
 # Forces non-integers variables to be integer. Integer variables may become
 
-function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::Vector{tSolution{Float64}}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay)::Vector{tSolution{Float64}}
-    nbvar::Int = size(A,2)
-    nbctr::Int = size(A,1)
-    println("NBVAR :", nbvar)
-    println("TRANSFORMING LOWER BOUNDED SET")
-    nadir = tPoint(L[end].y[1],L[1].y[2])
-    nbgen = length(L)
-    for k in eachindex(vg)
-        #cλ::Vector{Float64} = λ1[k].*c2 + λ2[k].*c1 
-        println("k=",k)
-        cλ::Vector{Float64} = λ1[k].*c1 + λ2[k].*c2 # 
+function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::Vector{tSolution{Float64}}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay, max_ratio_bv_gi::Float64)::Vector{tSolution{Float64}}
+    if IMPROVING_GENERATORS
+        nbvar::Int = size(A,2)
+        nbctr::Int = size(A,1)
+        verbose ? println("NBVAR :", nbvar) : nothing
+        verbose ? println("TRANSFORMING LOWER BOUNDED SET") : nothing
+        nadir = tPoint(L[end].y[1],L[1].y[2])
+        nbgen = length(L)
+        for k in eachindex(vg)
+            #cλ::Vector{Float64} = λ1[k].*c2 + λ2[k].*c1 
+            verbose ? println("k=",k) : nothing
+            cλ::Vector{Float64} = λ1[k].*c1 + λ2[k].*c2 # 
 
-        model::Model = Model(GLPK.Optimizer)
-        @variable(model, 0<=x[1:nbvar]<=1)
-        
-        @objective(model, Min, sum(cλ[j]*x[j] for j in 1:nbvar))
-        @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
+            model::Model = Model(default_optimizer)
+            set_silent(model)
+            @variable(model, 0<=x[1:nbvar]<=1)
+            
+            @objective(model, Min, sum(cλ[j]*x[j] for j in 1:nbvar))
+            @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
 
-        @expression(model, z1, sum(c1[j]*x[j] for j in 1:nbvar))
-        @expression(model, z2, sum(c2[j]*x[j] for j in 1:nbvar))
-        
-        if CONES_CONSTRAINED_IMPROVE_GENERATORS && (1<k) && (k<nbgen)
-            u = tPoint(L[k-1].y[1],L[k-1].y[2])
-            v = tPoint(L[k+1].y[1],L[k+1].y[2])
-            if k==2
-                α2 = (nadir.y - v.y)/(nadir.x - v.x)
-                β2 = nadir.y - α2*nadir.x
-                @constraint(model, z2 <= nadir.y) # TODO: can be lower bounded
-                @constraint(model, α2*z1+β2 <= z2)
-            elseif k==(nbgen-1)
-                α1 = (nadir.y - u.y)/(nadir.x - u.x)
-                β1 = nadir.y - α1*nadir.x
-                @constraint(model, α1*z1+β1 >= z2)
-                @constraint(model, z1 <= nadir.x) # TODO: can be upper bounded
-            else 
-                α1 = (nadir.y - u.y)/(nadir.x - u.x)
-                β1 = nadir.y - α1*nadir.x
-                α2 = (nadir.y - v.y)/(nadir.x - v.x)
-                β2 = nadir.y - α2*nadir.x
-                @constraint(model, α1*z1+β1 >= z2)
-                @constraint(model, α2*z1+β2 <= z2)
+            @expression(model, z1, sum(c1[j]*x[j] for j in 1:nbvar))
+            @expression(model, z2, sum(c2[j]*x[j] for j in 1:nbvar))
+            
+            if CONES_CONSTRAINED_IMPROVE_GENERATORS && (1<k) && (k<nbgen)
+                u = tPoint(L[k-1].y[1],L[k-1].y[2])
+                v = tPoint(L[k+1].y[1],L[k+1].y[2])
+                if k==2
+                    α2 = (nadir.y - v.y)/(nadir.x - v.x)
+                    β2 = nadir.y - α2*nadir.x
+                    @constraint(model, z2 <= nadir.y) # TODO: can be lower bounded
+                    @constraint(model, α2*z1+β2 <= z2)
+                elseif k==(nbgen-1)
+                    α1 = (nadir.y - u.y)/(nadir.x - u.x)
+                    β1 = nadir.y - α1*nadir.x
+                    @constraint(model, α1*z1+β1 >= z2)
+                    @constraint(model, z1 <= nadir.x) # TODO: can be upper bounded
+                else 
+                    α1 = (nadir.y - u.y)/(nadir.x - u.x)
+                    β1 = nadir.y - α1*nadir.x
+                    α2 = (nadir.y - v.y)/(nadir.x - v.x)
+                    β2 = nadir.y - α2*nadir.x
+                    @constraint(model, α1*z1+β1 >= z2)
+                    @constraint(model, α2*z1+β2 <= z2)
+                end
+            end
+
+            idx = [l for l in 1:(max(1,k-1)) if vg[l].sFea]
+            #println("INDEX : ", idx)
+
+            for q in idx
+                N0, N1 = split01(vg[q].sInt.x)
+                verbose ? println("Generator : ", q) : nothing
+                verbose ? println("y1=", vg[q].sInt.y[1]) : nothing
+                verbose ? println("y2=", vg[q].sInt.y[2]) : nothing
+                #=
+                @expression(model, obj1[q], sum(c1[j]*x[j] for j in 1:nbvar))
+                @expression(model, obj2[q], sum(c2[j]*x[j] for j in 1:nbvar))
+
+                @constraint(model, vg[q].sInt.y[1] <= obj1)
+                @constraint(model, vg[q].sInt.y[2] <= obj2)
+                =#
+                @constraint(model, sum(x[j] for j in N0) + sum(1-x[j] for j in N1) >= 1)
+                #rightMember = 0.001*sum(cλ)
+                #sum(cλ[j]*x[j] for j in N0) + sum(cλ[j] for j in N1)
+                #@constraint(model, sum(cλ[j]*x[j] for j in N0) + sum(cλ[j]*(1-x[j]) for j in N1) >= 1)
+            end
+            
+            #=
+            Fractional variables are constrained to be binary hoping that it will improve the initial solution
+            =#
+            
+            idxNonInt::Vector{Int} = [i for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0.,atol=10^-3)||isapprox(vg[k].sRel.x[i],1.,atol=10^-3))]
+            verbose ? println("Number of non integral variables:", length(idxNonInt)) : nothing
+            idxNonInt = sort(idxNonInt, by=i->abs(vg[k].sRel.x[i]-1/2)) # The more x is close to 1/2 the more it is lucky to become a binary variable
+
+            #nbBinVar = THRESHOLD_BinVar
+            # TODO : THRESHOLD
+            nbBinVar = Int(ceil((max_ratio_bv_gi* length(idxNonInt))))
+            verbose ? println("Number of variables set integral: ", nbBinVar) : nothing
+            for i in idxNonInt[1:min(end,nbBinVar)]
+                set_binary(model[:x][i])
+            end
+            
+            optimize!(model)
+
+            vg[k].sRel.x = value.(x)
+
+            @makearrow begin vg[k].sRel.y[1], vg[k].sRel.y[2] = evaluerSolution(vg[k].sRel.x,c1,c2) end vg[k].sRel.y[1] vg[k].sRel.y[2] vg[k].sRel.y[1] vg[k].sRel.y[2] "fuchsia"
+
+            # Feasibility test
+            if estAdmissible(vg[k].sRel.x);
+                verbose ? println("Admissibilité du générateur amélioré ", k) : nothing
+                vg[k].sFea = true
+                ajouterXtilde!(vg, k, convert.(Int, round.(vg[k].sRel.x)), convert.(Int, round.(vg[k].sRel.y)))
+                if generateurVisualise == -1 
+                    # archivage pour tous les generateurs
+                    push!(d.XFeas,round(vg[k].sRel.y[1]))
+                    push!(d.YFeas,round(vg[k].sRel.y[2]))
+                elseif generateurVisualise == k
+                    # archivage seulement pour le generateur k
+                    push!(d.XFeas,round(vg[k].sRel.y[1]))
+                    push!(d.YFeas,round(vg[k].sRel.y[2]))
+                end 
+            else
+                verbose ? println("Le générateur amélioré ", k, " n'est pas admissible") : nothing
             end
         end
-        idx = [l for l in 1:(max(1,k-1)) if vg[l].sFea]
-        #println("INDEX : ", idx)
-
-        for q in idx
-            N0, N1 = split01(vg[q].sInt.x)
-            println("Generator : ", q)
-            println("y1=", vg[q].sInt.y[1])
-            println("y2=", vg[q].sInt.y[2])
-            #=
-            @expression(model, obj1[q], sum(c1[j]*x[j] for j in 1:nbvar))
-            @expression(model, obj2[q], sum(c2[j]*x[j] for j in 1:nbvar))
-
-            @constraint(model, vg[q].sInt.y[1] <= obj1)
-            @constraint(model, vg[q].sInt.y[2] <= obj2)
-            =#
-            @constraint(model, sum(x[j] for j in N0) + sum(1-x[j] for j in N1) >= 1)
-            #rightMember = 0.001*sum(cλ)
-            #sum(cλ[j]*x[j] for j in N0) + sum(cλ[j] for j in N1)
-            #@constraint(model, sum(cλ[j]*x[j] for j in N0) + sum(cλ[j]*(1-x[j]) for j in N1) >= 1)
-        end
         
-        #maxRatioBinaryVariables
+        #=println("Number of diff values: ", 
+            length([v for v in redundantVar([Float64.(vg[l].sInt.x) for l in eachindex(vg) if vg[l].sFea])[1] if v==0])
+            )=#
         
-        idxNonInt::Vector{Int} = [i for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0.,atol=10^-3)||isapprox(vg[k].sRel.x[i],1.,atol=10^-3))]
-        println("Number of non integral variables:", length(idxNonInt))
-        idxNonInt = sort(idxNonInt, by=i->abs(vg[k].sRel.x[i]-1/2)) # The more x is close to 1/2 the more it is lucky to become a binary variable
-
-        nbBinVar = Int(ceil((maxRatioBinaryVariables * length(idxNonInt))))
-        println("Number of variables set integral: ", nbBinVar)
-        for i in idxNonInt[1:min(end,nbBinVar)]
-            set_binary(model[:x][i])
+        #println("FIN DE L AMELIORATION")
+        Limproved = [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)]
+        if verbose
+            #Lrounded = [tSolution(round.(g.x)) for g in Limproved]
+            for k in eachindex(vg)
+                println("[",Limproved[k].y[1],";",Limproved[k].y[2],"]")
+                g = Limproved[k].x
+                restrictedLimproved = [convert.(Bool, round.(Limproved[i].x)) for i in eachindex(vg) if i!=k]
+                #println("Coordonnées à 1: ", findall(convert.(Bool, round.(g))))
+                println("Générateur courant a déjà une solution soeur: ", convert.(Bool, round.(g)) in restrictedLimproved)
+            end
         end
-        
-        optimize!(model)
-
-        vg[k].sRel.x = value.(x)
-
-        @makearrow begin vg[k].sRel.y[1], vg[k].sRel.y[2] = evaluerSolution(vg[k].sRel.x,c1,c2) end vg[k].sRel.y[1] vg[k].sRel.y[2] vg[k].sRel.y[1] vg[k].sRel.y[2] "fuchsia"
-
-        if estAdmissible(vg[k].sRel.x);
-            println("Admissibilité du générateur amélioré ", k)
-            vg[k].sFea = true
-            ajouterXtilde!(vg, k, convert.(Int, round.(vg[k].sRel.x)), convert.(Int, round.(vg[k].sRel.y)))
-            if generateurVisualise == -1 
-                # archivage pour tous les generateurs
-                push!(d.XFeas,round(vg[k].sRel.y[1]))
-                push!(d.YFeas,round(vg[k].sRel.y[2]))
-            elseif generateurVisualise == k
-                # archivage seulement pour le generateur k
-                push!(d.XFeas,round(vg[k].sRel.y[1]))
-                push!(d.YFeas,round(vg[k].sRel.y[2]))
-            end 
-        else
-            println("Le générateur amélioré ", k, " n'est pas admissible")
-        end
+        #break # TO BE REMOVED
+        return Limproved #  (new) improved Lower Bound Set
+    else
+        return L
     end
-    
-    #=println("Number of diff values: ", 
-        length([v for v in redundantVar([Float64.(vg[l].sInt.x) for l in eachindex(vg) if vg[l].sFea])[1] if v==0])
-        )=#
-    println("FIN DE L AMELIORATION")
-    Limproved = [tSolution(deepcopy(vg[k].sRel.x),deepcopy(vg[k].sRel.y)) for k in eachindex(vg)]
-    #Lrounded = [tSolution(round.(g.x)) for g in Limproved]
-    for k in eachindex(vg)
-        println("[",Limproved[k].y[1],";",Limproved[k].y[2],"]")
-        g = Limproved[k].x
-        restrictedLimproved = [convert.(Bool, round.(Limproved[i].x)) for i in eachindex(vg) if i!=k]
-        #println("Coordonnées à 1: ", findall(convert.(Bool, round.(g))))
-        println("Générateur courant a déjà une solution soeur: ", convert.(Bool, round.(g)) in restrictedLimproved)
-    end
-    #break # TO BE REMOVED
-    return Limproved #  (new) improved Lower Bound Set
 end
 
 # point d'entree principal
@@ -376,7 +387,9 @@ end
 function GM( fname::String,
              tailleSampling::Int64,
              maxTrial::Int64,
-             maxTime::Int64
+             maxTime::Int64,
+             max_ratio_bv_gi::Float64 = MAX_RATIO_BinVar_GENERATOR_IMPROVEMENT,
+             max_ratio_bv_pr::Float64 = MAX_RATIO_BinVar_PROJECTION
            )
 
     @assert tailleSampling>=3 "Erreur : Au moins 3 sont requis"
@@ -389,250 +402,233 @@ function GM( fname::String,
     nbctr = size(A,1)
     nbvar = size(A,2)
     nbobj = 2
+    etime = @elapsed begin # time measurement
+        # structure pour les points qui apparaitront dans l'affichage graphique
+        d::tListDisplay = tListDisplay([Vector{tSolution}() for k in 1:16]...)
 
-    # structure pour les points qui apparaitront dans l'affichage graphique
-    d::tListDisplay = tListDisplay([Vector{tSolution}() for k in 1:16]...)
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        @printf("1) calcule les etendues de valeurs sur les 2 objectifs\n\n")
 
-    # --------------------------------------------------------------------------
-    # --------------------------------------------------------------------------
-    @printf("1) calcule les etendues de valeurs sur les 2 objectifs\n\n")
+        # calcule la valeur optimale relachee de f1 seule et le point (z1,z2) correspondant
+        f1RL, xf1RL = computeLinearRelax2SPA(nbvar, nbctr, A, c1, c2, typemax(Int), 1) # opt fct 1
+        minf1RL, maxf2RL = evaluerSolution(xf1RL, c1, c2)
 
-    # calcule la valeur optimale relachee de f1 seule et le point (z1,z2) correspondant
-    f1RL, xf1RL = computeLinearRelax2SPA(nbvar, nbctr, A, c1, c2, typemax(Int), 1) # opt fct 1
-    minf1RL, maxf2RL = evaluerSolution(xf1RL, c1, c2)
+        # calcule la valeur optimale relachee de f2 seule et le point (z1,z2) correspondant
+        f2RL, xf2RL = computeLinearRelax2SPA(nbvar, nbctr, A, c1, c2, typemax(Int), 2) # opt fct 2
+        maxf1RL, minf2RL = evaluerSolution(xf2RL, c1, c2)
 
-    # calcule la valeur optimale relachee de f2 seule et le point (z1,z2) correspondant
-    f2RL, xf2RL = computeLinearRelax2SPA(nbvar, nbctr, A, c1, c2, typemax(Int), 2) # opt fct 2
-    maxf1RL, minf2RL = evaluerSolution(xf2RL, c1, c2)
+        verbose ? @printf("  f1_min=%8.2f ↔ f1_max=%8.2f (Δ=%.2f) \n", minf1RL, maxf1RL, maxf1RL-minf1RL) : nothing
+        verbose ? @printf("  f2_min=%8.2f ↔ f2_max=%8.2f (Δ=%.2f) \n\n", minf2RL, maxf2RL, maxf2RL-minf2RL) : nothing
 
-    verbose ? @printf("  f1_min=%8.2f ↔ f1_max=%8.2f (Δ=%.2f) \n", minf1RL, maxf1RL, maxf1RL-minf1RL) : nothing
-    verbose ? @printf("  f2_min=%8.2f ↔ f2_max=%8.2f (Δ=%.2f) \n\n", minf2RL, maxf2RL, maxf2RL-minf2RL) : nothing
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        @printf("2) calcule les generateurs par e-contrainte alternant minimiser z1 et z2\n\n")
 
-    # --------------------------------------------------------------------------
-    # --------------------------------------------------------------------------
-    @printf("2) calcule les generateurs par e-contrainte alternant minimiser z1 et z2\n\n")
+        nbgen, L = calculGenerateurs(A, c1, c2, tailleSampling, minf1RL, maxf2RL, maxf1RL, minf2RL, d)
 
-    nbgen, L = calculGenerateurs(A, c1, c2, tailleSampling, minf1RL, maxf2RL, maxf1RL, minf2RL, d)
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        # allocation de memoire pour la structure de donnees -----------------------
 
-    # --------------------------------------------------------------------------
-    # --------------------------------------------------------------------------
-    # allocation de memoire pour la structure de donnees -----------------------
+        vg::Vector{tGenerateur} = allocateDatastructure(nbgen, nbvar, nbobj)
 
-    vg::Vector{tGenerateur} = allocateDatastructure(nbgen, nbvar, nbobj)
-
-    # --------------------------------------------------------------------------
-    # --------------------------------------------------------------------------
-    @printf("3) place L dans structure et verifie l'admissibilite de chaque generateur\n\n")
-    
-    # TEMPORARY BENCHMARK
-    nbcyclestotal = 0
-    nbcyclesMax = 0
-    
-    # ==========================================================================
-    # ANALYSIS OF THE FIRST (NON-IMPROVED) GENERATORS
-    for k=1:nbgen
-
-        verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, L[k].y[1], L[k].y[2]) : nothing
-
-        # copie de l'ensemble bornant inferieur dans la stru de donnees iterative ---
-        ajouterX0!(vg, k, L[k])
-
-        generateurVisualise = plotGenerators ? k : -1
-
-        #function ajouterXtilde!(vg::Vector{tGenerateur}, k::Int64, x::Vector{Int64}, y::Vector{Int64})
-
-        # test d'admissibilite et marquage de la solution le cas echeant -------
-        if estAdmissible(vg[k].sRel.x)
-            ajouterXtilde!(vg, k, convert.(Int, vg[k].sRel.x), convert.(Int, L[k].y))
-            vg[k].sFea   = true
-            verbose ? @printf("→ Admissible \n") : nothing
-            # archive le point obtenu pour les besoins d'affichage    
-            if generateurVisualise == -1 
-                # archivage pour tous les generateurs
-                push!(d.XFeas,vg[k].sInt.y[1]) # instead of sInt
-                push!(d.YFeas,vg[k].sInt.y[2])
-            elseif generateurVisualise == k
-                # archivage seulement pour le generateur k
-                push!(d.XFeas,vg[k].sInt.y[1])
-                push!(d.YFeas,vg[k].sInt.y[2])
-            end 
-        else
-            vg[k].sFea   = false
-            verbose ? @printf("→ x          \n") : nothing
-        end
-
-    end
-
-    # --------------------------------------------------------------------------
-    # --------------------------------------------------------------------------
-    # Sortie graphique
-
-    graphic ? figure("Gravity Machine",figsize=(6.5,5)) : nothing
-    #xlim(25000,45000)
-    #ylim(20000,40000)
-    graphic ? xlabel(L"z^1(x)") : nothing
-    graphic ? ylabel(L"z^2(x)") : nothing
-    graphic ? title("Cone | 1 rounding | 2-$fname") : nothing
-
-    # --------------------------------------------------------------------------
-    # --------------------------------------------------------------------------
-    # calcule les directions (λ1,λ2) pour chaque generateur a utiliser lors des projections
-    
-
-    #d.xLf1Improved = [vg[k].sRel.x[1] for k in eachindex(vg)] ;  d.yLf1Improved # liste des points (x,y) relaches améliorés #Recent improvement
-    #d.xLf2Improved = [] ;  d.yLf2Improved # liste des points (x,y) relaches améliorés #Recent improvement 
-    
-    println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
-    # ANALYSIS OF THE SECOND (IMPROVED) GENERATORS
-    
-    λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(L,vg)
-    verbose ? println("---> Directions computed") : nothing
-    
-    Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,L,λ1,λ2,c1,c2,d)
-    verbose ? println("---> Generators improved") : nothing
-
-    λ1, λ2 = interface_computeDirections(L,vg) # TODO: with new generators
-    verbose ? println("---> Directions updated according to the improved generators") : nothing
-
-    #d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
-    d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
-
-    improvedNadir::tPoint = tPoint(Limproved[end].y[1],Limproved[1].y[2]) 
-
-    @printf("4) terraformation generateur par generateur \n\n")
-    labelInt = 1 # graphical purpose
-    #--- Number of trials allowed
-
-    globalNadir = tPoint(L[end].y[1],L[1].y[2])
-    
-    #println("Budget par générateur : ", budgetMaxTrials)
-    nbFeasible = 0
-    nbMaxTrials = 0
-    nbMaxTime = 0
-
-    idxFeasibleGenerators::Vector{Int} = [k for k in 1:nbgen if isFeasible(vg,k)]
-    solutionsHist::Set{Vector{Int}} = Set{Vector{Int}}([vg[k].sInt.x for k in idxFeasibleGenerators]) # tabu memory
-    
-    antecedantPoint::Dict{Vector{Int},Vector{Vector{Float64}}} = Dict{Vector{Int},Vector{Vector{Float64}}}([Pair(copy(vg[k].sInt.x),[]) for k in idxFeasibleGenerators]...)
-    #=
-    Contain : 
-    Feasible solution and their antecedants which may be:
-    -> Some improved generators
-    -> Some perturbed solutions
-    =#
-
-    # archiving of improved generators which lead to feasible solution
-    for k in idxFeasibleGenerators
-        push!(antecedantPoint[vg[k].sInt.x],Limproved[k].x)
-    end
-
-    for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
-        temps = time()
-        trial = 0
-    
-        # rounding solution : met a jour sInt dans vg --------------------------
-        #roundingSolution!(vg,k,c1,c2,d)  # un cone
-        #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
-
-        @makearrow(interface_roundingSolution!(vg,k,c1,c2,d),vg[k].sRel.y[1],vg[k].sRel.y[2],vg[k].sInt.y[1],vg[k].sInt.y[2],"orange")
-
-        slowexec ? sleep(slowtime) : nothing
-        # => Only floating point value are modified so splitByType does have style a sense
-        verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
-        nbcycles = 0
-        nbcyclesSameSol = 0
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        @printf("3) place L dans structure et verifie l'admissibilite de chaque generateur\n\n")
         
-        while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
-            H::Vector{Vector{Int}} = Vector{Vector{Int}}()
-            trial+=1
-            α = 1.#1/(2^(trial-1)) # TODO
-            β = 0.#0.4 + 0.6*trial/maxTrial
-            γ = 1.
-            nbcyclesMax = max(nbcyclesMax,nbcycles)
-            println("   α = ", α)
-            println("   β = ", β)
-            # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
-            temphist = vg[k].sInt 
-            if nbcyclesSameSol > 0 
-                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,solutionsHist,vg[k].sPrj.y[1],nbcyclesSameSol) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"    
+        # TEMPORARY BENCHMARK
+        nbcyclestotal = 0
+        nbcyclesMax = 0
+        
+        # ==========================================================================
+        # ANALYSIS OF THE FIRST (NON-IMPROVED) GENERATORS
+        for k=1:nbgen
+
+            verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, L[k].y[1], L[k].y[2]) : nothing
+
+            # copie de l'ensemble bornant inferieur dans la stru de donnees iterative ---
+            ajouterX0!(vg, k, L[k])
+
+            generateurVisualise = plotGenerators ? k : -1
+
+            #function ajouterXtilde!(vg::Vector{tGenerateur}, k::Int64, x::Vector{Int64}, y::Vector{Int64})
+
+            # test d'admissibilite et marquage de la solution le cas echeant -------
+            if estAdmissible(vg[k].sRel.x)
+                ajouterXtilde!(vg, k, convert.(Int, vg[k].sRel.x), convert.(Int, L[k].y))
+                vg[k].sFea   = true
+                verbose ? @printf("→ Admissible \n") : nothing
+                # archive le point obtenu pour les besoins d'affichage    
+                if generateurVisualise == -1 
+                    # archivage pour tous les generateurs
+                    push!(d.XFeas,vg[k].sInt.y[1]) # instead of sInt
+                    push!(d.YFeas,vg[k].sInt.y[2])
+                elseif generateurVisualise == k
+                    # archivage seulement pour le generateur k
+                    push!(d.XFeas,vg[k].sInt.y[1])
+                    push!(d.YFeas,vg[k].sInt.y[2])
+                end 
             else
-                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,solutionsHist,fill(0,length(vg[k].sRel.x)),nbcyclesSameSol) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
+                vg[k].sFea   = false
+                verbose ? @printf("→ x          \n") : nothing
             end
-            #slowexec ? sleep(slowtime) : nothing
-            println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
-            #if isFeasible(vg,k) && 
-            if isFeasible(vg,k)
-                if Int.(vg[k].sPrj.x) in solutionsHist
-                    push!(antecedantPoint[Int.(vg[k].sPrj.x)],copy(vg[k].sInt.x))
-                    vg[k].sFea = false
-                    #@makearrow perturbSolutionInt!(vg,k,c1,c2,d,antecedentPoint[vg[k].sInt.x]) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "pink"
-                    @makearrow perturbSolution45!(vg,k,c1,c2,d,λ1,λ2,nbcyclesSameSol,antecedantPoint[Int.(vg[k].sPrj.x)],1.) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "cyan"
-                    nbcyclesSameSol += 1
-                else # the new solution is added to the tabulist
-                    #antecedantPoint[vg[k].sPrj.x] = [Int.(vg[k].sInt.x)]
-                    push!(solutionsHist,Int.(vg[k].sPrj.x))
-                    antecedantPoint[Int.(vg[k].sPrj.x)] = [Int.(vg[k].sInt.x)] # initializer
-                end
-            else
-                # rounding solution : met a jour sInt dans vg --------------------------
 
-                @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
-                slowexec ? sleep(slowtime) : nothing
+        end
 
-                push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        # Sortie graphique
 
+        graphic ? figure("Gravity Machine",figsize=(6.5,5)) : nothing
+        #xlim(25000,45000)
+        #ylim(20000,40000)
+        graphic ? xlabel(L"z^1(x)") : nothing
+        graphic ? ylabel(L"z^2(x)") : nothing
+        graphic ? title("Cone | 1 rounding | 2-$fname") : nothing
+
+        # --------------------------------------------------------------------------
+        # --------------------------------------------------------------------------
+        # calcule les directions (λ1,λ2) pour chaque generateur a utiliser lors des projections
+        
+
+        #d.xLf1Improved = [vg[k].sRel.x[1] for k in eachindex(vg)] ;  d.yLf1Improved # liste des points (x,y) relaches améliorés #Recent improvement
+        #d.xLf2Improved = [] ;  d.yLf2Improved # liste des points (x,y) relaches améliorés #Recent improvement 
+        
+        println("3)bis Préparation pour 4) -> tentative d'amélioration des générateurs ")
+        # ANALYSIS OF THE SECOND (IMPROVED) GENERATORS
+        
+        λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(L,vg)
+        verbose ? println("---> Directions computed") : nothing
+        
+        Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,L,λ1,λ2,c1,c2,d,max_ratio_bv_gi)
+        verbose ? println("---> Generators improved") : nothing
+
+        λ1, λ2 = interface_computeDirections(Limproved,vg) # TODO: with new generators
+        verbose ? println("---> Directions updated according to the improved generators") : nothing
+
+        #d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
+        d.xLImproved = [g.sRel.y[1] for g in vg]; d.yLImproved = [g.sRel.y[2] for g in vg]    # liste des points (x,y) relaches améliorés #Recent improvement
+
+        improvedNadir::tPoint = tPoint(Limproved[end].y[1],Limproved[1].y[2]) 
+
+        @printf("4) terraformation generateur par generateur \n\n")
+        labelInt = 1 # graphical purpose
+        #--- Number of trials allowed
+
+        globalNadir = tPoint(L[end].y[1],L[1].y[2])
+        
+        #println("Budget par générateur : ", budgetMaxTrials)
+        nbFeasible = 0
+        nbMaxTrials = 0
+        nbMaxTime = 0
+
+        #=
+        idxFeasibleGenerators::Vector{Int} = [k for k in 1:nbgen if isFeasible(vg,k)]
+        solutionsHist::Set{Vector{Int}} = Set{Vector{Int}}([vg[k].sInt.x for k in idxFeasibleGenerators]) # tabu memory
+        
+        antecedantPoint::Dict{Vector{Int},Vector{Vector{Float64}}} = Dict{Vector{Int},Vector{Vector{Float64}}}([Pair(copy(vg[k].sInt.x),[]) for k in idxFeasibleGenerators]...)
+        =#
+        #=
+        Contain : 
+        Feasible solution and their antecedants which may be:
+        -> Some improved generators
+        -> Some perturbed solutions
+        =#
+
+        for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
+            temps = time()
+            trial = 0
+        
+            # rounding solution : met a jour sInt dans vg --------------------------
+            #roundingSolution!(vg,k,c1,c2,d)  # un cone
+            #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
+
+            @makearrow(interface_roundingSolution!(vg,k,c1,c2,d),vg[k].sRel.y[1],vg[k].sRel.y[2],vg[k].sInt.y[1],vg[k].sInt.y[2],"orange")
+
+            slowexec ? sleep(slowtime) : nothing
+            # => Only floating point value are modified so splitByType does have style a sense
+            verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
+            nbcycles = 0
+            
+            while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
+                H::Vector{Vector{Int}} = Vector{Vector{Int}}()
+                trial+=1
+                α = 1.#1/(2^(trial-1)) # TODO
+                β = 0.#0.4 + 0.6*trial/maxTrial
+                γ = 1.
+                nbcyclesMax = max(nbcyclesMax,nbcycles)
+                println("   α = ", α)
+                println("   β = ", β)
+                # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
+ 
+                @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,max_ratio_bv_pr) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
+
+                #slowexec ? sleep(slowtime) : nothing
                 println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
+                #if isFeasible(vg,k) && 
+                if isFeasible(vg,k)
+                    nothing
+                else
+                    # rounding solution : met a jour sInt dans vg --------------------------
 
-                # test detection cycle sur solutions entieres ------------------
-                cycle = (vg[k].sInt.y[1],vg[k].sInt.y[2]) in H
-                if (cycle == true)
-                    println("CYCLE!!!!!!!!!!!!!!!")
-                    nbcycles += 1
-                    # perturb solution
-                    @makearrow perturbSolution30!(vg,k,c1,c2,d) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "pink"
+                    @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
                     slowexec ? sleep(slowtime) : nothing
-                    #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
+
+                    push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
+
+                    println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
+
+                    # test detection cycle sur solutions entieres ------------------
+                    cycle = (vg[k].sInt.y[1],vg[k].sInt.y[2]) in H
+                    if (cycle == true)
+                        println("CYCLE!!!!!!!!!!!!!!!")
+                        nbcycles += 1
+                        # perturb solution
+                        @makearrow perturbSolution30!(vg,k,c1,c2,d) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "pink"
+                        slowexec ? sleep(slowtime) : nothing
+                        #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
+                    end
                 end
             end
+            nbcyclestotal += nbcycles
+
+            if t1
+                println("   feasible \n")
+                #push!(solutionsHist,vg[k].sInt.x)
+                nbFeasible+=1
+            elseif t2
+                println("   maxTrial \n")
+                nbMaxTrials+=1
+            elseif t3
+                println("   maxTime \n")
+                nbMaxTime+=1
+            end
+
+
         end
-        nbcyclestotal += nbcycles
+        # ==========================================================================
 
-        if t1
-            println("   feasible \n")
-            push!(solutionsHist,vg[k].sInt.x)
-            nbFeasible+=1
-        elseif t2
-            println("   maxTrial \n")
-            nbMaxTrials+=1
-        elseif t3
-            println("   maxTime \n")
-            nbMaxTime+=1
+        @printf("5) Extraction des resultats\n\n")
+
+
+        for k=1:nbgen
+            verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, vg[k].sInt.y[1],vg[k].sInt.y[2]) : nothing
+            # test d'admissibilite et marquage de la solution le cas echeant -------
+            if vg[k].sFea
+                verbose ? @printf("→ Admissible \n") : nothing
+            else
+                verbose ? @printf("→ x          \n") : nothing
+            end
         end
 
-
-    end
-    # ==========================================================================
-
-    @printf("5) Extraction des resultats\n\n")
-
-
-    for k=1:nbgen
-        verbose ? @printf("  %2d  : [ %8.2f , %8.2f ] ", k, vg[k].sInt.y[1],vg[k].sInt.y[2]) : nothing
-        # test d'admissibilite et marquage de la solution le cas echeant -------
-        if vg[k].sFea
-            verbose ? @printf("→ Admissible \n") : nothing
-        else
-            verbose ? @printf("→ x          \n") : nothing
+        # allocation de memoire pour les ensembles bornants ------------------------
+        U = Vector{tSolution{Int64}}(undef,nbgen)
+        for j = 1:nbgen
+            U[j] = tSolution{Int64}(zeros(Int64,nbvar),zeros(Int64,nbobj))
         end
+        #--> TODO : stocker l'EBP dans U proprement
     end
-
-    # allocation de memoire pour les ensembles bornants ------------------------
-    U = Vector{tSolution{Int64}}(undef,nbgen)
-    for j = 1:nbgen
-        U[j] = tSolution{Int64}(zeros(Int64,nbvar),zeros(Int64,nbobj))
-    end
-    #--> TODO : stocker l'EBP dans U proprement
-
 
     # ==========================================================================
     @printf("6) Edition des resultats \n\n")
@@ -708,18 +704,7 @@ function GM( fname::String,
         close()
     end
     # TEMPORARY TO BENCHMARK
-    return quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials
-end
-
-function generateRandomBinSolution(n,nbsol)::Vector{Vector{Int}}
-    result::Vector{Vector{Int}} = [Vector{Int}(undef,n) for k in 1:nbsol]
-    sizehint!(result,nbsol)
-    for k in 1:nbsol
-        for i in 1:n
-            result[k][i] = rand() <= 1/2 ? 0 : 1
-        end
-    end
-    return result
+    return etime, quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials
 end
 
 # ==============================================================================
@@ -728,10 +713,12 @@ end
 end=#
 #[GM(name[4:end], 6, 20, 20) for name in readdir("../SPA/instances")[20:end]]
 #@time GM("sppaa02.txt", 6, 20, 20)
-#@time GM("sppnw03.txt", 6, 20, 20) #pb glpk
+#@time GM("sppnw03.txt", 6, 20, 20) #pb HiGHS
 #@time GM("sppnw01.txt", 6, 20, 20)
 #@time GM("sppnw06.txt", 6, 20, 20)
-@time GM("sppnw31.txt", 6, 20, 20)
+#@time GM("sppnw31.txt", 6, 20, 20)
+#@time GM("sppnw11.txt", 6, 20, 20)
+#@time GM("sppnw23.txt",6,20,20)
 #@time GM("sppnw30.txt", 6, 20, 20)
 #@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
