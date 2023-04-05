@@ -1,10 +1,11 @@
 using DataFrames
 using CSV
 using LaTeXStrings
+using HypothesisTests
 import PyPlot
 const plt = PyPlot
 plt.pygui(true)
-const path = "./results/"
+const path = "./results/resultsBinVar/No cones for separation/"
 const pathPP = "./performanceProfile/"
 const fields = [:Quality, 
                 :Number_Of_Cycles, 
@@ -83,7 +84,70 @@ function plotQualities(filename::String, characteristic::Symbol, characteristicB
     plt.close(fig)
 end
 
-function plotQualitiesScatterLine(filename::String, characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"resultRef.csv")
+function plotQualitiesScatterLine(characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"0.0-0.0.csv")
+    # parsing 
+    refDf = DataFrame(CSV.File(refFile))
+    # getting some informations
+    
+    
+    characteristicRef = (characteristicBis==nothing ? refDf[!,characteristic] : (refDf[!,characteristic] ./ refDf[!,characteristicBis]))
+    #println(characteristicCurrent)
+    #println(characteristicRef)
+    #println(names)
+    names = refDf[!,:Instance]
+    xPos = collect(1:length(names))
+
+    width = 0.4
+    fig, ax1 = plt.subplots()
+    #ax2 = ax1.twinx() # second axes
+    fig.set_dpi(300)
+    fig.set_size_inches(80.,52.)
+    ax1.tick_params(labelsize=6)
+    
+    plt.plot(xPos ,characteristicRef,color="green")
+    plt.scatter(xPos ,characteristicRef,label="State-of-the-art results",color="green")
+
+    # Setting the y_axis with a personalised density of ticks
+    nbpoints = 20
+    
+    maxY = 0
+    title::String = (characteristicBis==nothing ? string(characteristic) : string(characteristic)*"/"*string(characteristicBis))
+    plt.xticks(xPos, collect(map(x->x[end-5:end-4],names)))#,fontsize=5)
+    plt.xlabel("Instance")
+    plt.ylabel(title)
+    plt.title("Comparison for different ratio of fixed binary variables "*title)
+    meanRef = sum(characteristicRef)/length(characteristicRef)
+    plt.plot([xPos[1]-width,xPos[end]+width],[meanRef,meanRef],color="green",linestyle="dashed",label="Mean - ref State-of-the-art")
+
+    for filename in [file for file in readdir(path) if (file[end-3:end]==".csv") && (file!="0.0-0.0.csv")]
+        df = DataFrame(CSV.File(path*filename))
+        characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
+        max_y = max(maximum(characteristicRef),maximum(characteristicCurrent),maxY)
+        if max_y>0
+            yticks = range(start=0.,step=max_y/nbpoints,stop=max_y)
+            plt.yticks(yticks, labels=[string(v) for v in yticks])
+        end
+        plt.plot(xPos ,characteristicCurrent)
+        plt.scatter(xPos ,characteristicCurrent,label=filename[1:end-4])
+        meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent)
+        #stdDev = 100*(characteristicCurrent .- characteristicRef ./ characteristicRef) 
+        pval = pvalue(HypothesisTests.SignedRankTest(characteristicCurrent,characteristicRef))
+        plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],linestyle="dashed",label="Mean "*filename[1:end-4])
+        println(string(characteristic)*"---"*filename[1:end-4]*" - "*string(pval))
+        
+    end 
+    
+    #ax2.set_yticks([meanCurrent,meanRef],["Means for SOTA","Mean new method"])
+    #plt.yticks([meanRef],["Mean-New Method"],color="orange")
+    #plt.yticks([meanCurrent],["Mean_State of the Art"],color="red")
+    plt.legend()
+    #plt.show()
+    #println("Saving path : ", filename[1:end-5]*"/"*string(characteristic)*".png")
+    plt.savefig(path*title*"scatline.png")
+    plt.close(fig)
+end
+#=
+function plotQualitiesScatterLineParam(filename::String, characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"resultRef.csv")
     # parsing 
     df = DataFrame(CSV.File(filename))
     refDf = DataFrame(CSV.File(refFile))
@@ -132,7 +196,7 @@ function plotQualitiesScatterLine(filename::String, characteristic::Symbol, char
     #println("Saving path : ", filename[1:end-5]*"/"*string(characteristic)*".png")
     plt.savefig(filename[1:end-4]*"/"*title*"scatline.png")
     plt.close(fig)
-end
+end=#
 
 function plotPerformances()
     csvf::Vector{String} = [file for file in readdir(path) if file[end-3:end]==".csv"]
@@ -246,9 +310,12 @@ function performanceProfileFromRaw()
 end
 
 function main()
-    plotPerformances()
+    #plotPerformances()
     #plotRatioMIP()
     #performanceProfileFromRaw()
+    for characteristic in fields
+        plotQualitiesScatterLine(characteristic)
+    end
 end
 
 main()

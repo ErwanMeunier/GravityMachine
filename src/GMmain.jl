@@ -31,7 +31,7 @@ global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 global CHOICE_PERTUBATION = 2 # FROM 1 TO 3
-global CONES_CONSTRAINED_IMPROVE_GENERATORS::Bool = false # see transformLowerBoundedSet
+global CONES_CONSTRAINED_IMPROVE_GENERATORS::Bool = true # see transformLowerBoundedSet
 global PERTUB_SAME_SOL_PROJECTION::Bool = false
 
 global IMPROVING_GENERATORS = true
