@@ -8,10 +8,9 @@ const maxTrial = 20
 const maxTime = 20
 
 function benchmarkGM()
-    
     filenames::Vector{String} = readdir(instanceDirectory)
-    for max_ratio_bv_pr in 0:0.1:1
-        for max_ratio_bv_gi in 0:0.1:1
+    for max_ratio_bv_pr in 1:0.25:1
+        for max_ratio_bv_gi in (0.25:0.25:1)
             qualities = Vector{Float64}()
             nbcyclestotalVect = Vector{Int64}()
             nbcyclesMaxVect = Vector{Int64}()
