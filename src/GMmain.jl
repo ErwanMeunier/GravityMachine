@@ -4,10 +4,10 @@ using Revise # allowing the redefinition of constant variables while compiling a
 
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
-const verbose = false
+const verbose = true
 
 # Figures
-const graphic = false
+const graphic = true
 const savegraphic = false # set to false by default
 const savingDir = "./results/figuresSol/"
 
@@ -31,10 +31,11 @@ global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 global CHOICE_PERTUBATION = 2 # FROM 1 TO 3
-global CONES_CONSTRAINED_IMPROVE_GENERATORS::Bool = true # see transformLowerBoundedSet
-global PERTUB_SAME_SOL_PROJECTION::Bool = false
+global CONES_CONSTRAINED_IMPROVE_GENERATORS::Bool = false # see transformLowerBoundedSet
+global PERTUB_SAME_SOL_PROJECTION::Bool = false # useless
 
 global IMPROVING_GENERATORS = true
+global PROJECTION_BinVar = true;
 global THRESHOLD_BinVar::Int64 = typemax(Int64)
 global MAX_RATIO_BinVar_GENERATOR_IMPROVEMENT::Float64 = 1. # Ratio of bin variables set binary into the generator improvement ~ Must be between 0 and 1 meaning 0% to 100%
 global MAX_RATIO_BinVar_PROJECTION::Float64 = 1. # Ratio of bin variables set binary into the projection
@@ -437,9 +438,6 @@ function GM( fname::String,
         # --------------------------------------------------------------------------
         @printf("3) place L dans structure et verifie l'admissibilite de chaque generateur\n\n")
         
-        # TEMPORARY BENCHMARK
-        nbcyclestotal = 0
-        nbcyclesMax = 0
         
         # ==========================================================================
         # ANALYSIS OF THE FIRST (NON-IMPROVED) GENERATORS
@@ -519,22 +517,13 @@ function GM( fname::String,
         globalNadir = tPoint(L[end].y[1],L[1].y[2])
         
         #println("Budget par générateur : ", budgetMaxTrials)
+        # TEMPORARY BENCHMARK
         nbFeasible = 0
         nbMaxTrials = 0
         nbMaxTime = 0
-
-        #=
-        idxFeasibleGenerators::Vector{Int} = [k for k in 1:nbgen if isFeasible(vg,k)]
-        solutionsHist::Set{Vector{Int}} = Set{Vector{Int}}([vg[k].sInt.x for k in idxFeasibleGenerators]) # tabu memory
+        nbcyclestotal = 0
+        nbcyclesMax = 0
         
-        antecedantPoint::Dict{Vector{Int},Vector{Vector{Float64}}} = Dict{Vector{Int},Vector{Vector{Float64}}}([Pair(copy(vg[k].sInt.x),[]) for k in idxFeasibleGenerators]...)
-        =#
-        #=
-        Contain : 
-        Feasible solution and their antecedants which may be:
-        -> Some improved generators
-        -> Some perturbed solutions
-        =#
 
         for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
             temps = time()
@@ -567,9 +556,8 @@ function GM( fname::String,
                 #slowexec ? sleep(slowtime) : nothing
                 println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
                 #if isFeasible(vg,k) && 
-                if isFeasible(vg,k)
-                    nothing
-                else
+                
+                if !isFeasible(vg,k)
                     # rounding solution : met a jour sInt dans vg --------------------------
 
                     @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
@@ -719,8 +707,8 @@ end=#
 #@time GM("sppnw31.txt", 6, 20, 20)
 #@time GM("sppnw11.txt", 6, 20, 20)
 #@time GM("sppnw23.txt",6,20,20)
-#@time GM("sppnw30.txt", 6, 20, 20)
-#@time GM("sppnw40.txt", 6, 20, 20)
+#@time GM("sppnw31.txt", 6, 20, 20)
+@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)
 #nothing

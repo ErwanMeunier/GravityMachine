@@ -98,10 +98,10 @@ function plotQualitiesScatterLine(characteristic::Symbol, characteristicBis=noth
     xPos = collect(1:length(names))
 
     width = 0.4
-    fig, ax1 = plt.subplots()
+    fig, ax1 = plt.subplots(figsize=(20,13),dpi=100)
     #ax2 = ax1.twinx() # second axes
-    fig.set_dpi(300)
-    fig.set_size_inches(80.,52.)
+    #fig.set_dpi(300)
+    #fig.set_size_inches(20.,13.)
     ax1.tick_params(labelsize=6)
     
     plt.plot(xPos ,characteristicRef,color="green")
@@ -119,24 +119,26 @@ function plotQualitiesScatterLine(characteristic::Symbol, characteristicBis=noth
     meanRef = sum(characteristicRef)/length(characteristicRef)
     plt.plot([xPos[1]-width,xPos[end]+width],[meanRef,meanRef],color="green",linestyle="dashed",label="Mean - ref State-of-the-art")
 
+    colorIdx = 1
+    colorSet = ["seagreen","maroon","chocolate","darkviolet","lawngreen","royalblue"]
+
     for filename in [file for file in readdir(path) if (file[end-3:end]==".csv") && (file!="0.0-0.0.csv")]
         df = DataFrame(CSV.File(path*filename))
         characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
-        max_y = max(maximum(characteristicRef),maximum(characteristicCurrent),maxY)
-        if max_y>0
-            yticks = range(start=0.,step=max_y/nbpoints,stop=max_y)
-            plt.yticks(yticks, labels=[string(v) for v in yticks])
-        end
-        plt.plot(xPos ,characteristicCurrent)
-        plt.scatter(xPos ,characteristicCurrent,label=filename[1:end-4])
+        maxy = max(maximum(characteristicRef),maximum(characteristicCurrent),maxY)
+        plt.plot(xPos ,characteristicCurrent,color=colorSet[colorIdx])
+        plt.scatter(xPos ,characteristicCurrent,label=filename[1:end-4],color=colorSet[colorIdx])
         meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent)
         #stdDev = 100*(characteristicCurrent .- characteristicRef ./ characteristicRef) 
         pval = pvalue(HypothesisTests.SignedRankTest(characteristicCurrent,characteristicRef))
-        plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],linestyle="dashed",label="Mean "*filename[1:end-4])
+        plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],color=colorSet[colorIdx],linestyle="dashed",label="Mean "*filename[1:end-4])
         println(string(characteristic)*"---"*filename[1:end-4]*" - "*string(pval))
-        
+        colorIdx += 1
     end 
-    
+    if maxY>0
+        yticks = range(start=0.,step=maxY/nbpoints,stop=maxY)
+        plt.yticks(yticks, labels=[string(v) for v in yticks])
+    end
     #ax2.set_yticks([meanCurrent,meanRef],["Means for SOTA","Mean new method"])
     #plt.yticks([meanRef],["Mean-New Method"],color="orange")
     #plt.yticks([meanCurrent],["Mean_State of the Art"],color="red")
