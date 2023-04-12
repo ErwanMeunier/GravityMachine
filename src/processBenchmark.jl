@@ -15,7 +15,8 @@ const fields = [:Quality,
                 :Time,
                 :Nb_of_feasible_points_found,
                 :Nb_of_maxTime_reached,
-                :Nb_of_maxTrials_reached
+                :Nb_of_maxTrials_reached,
+                :Avg_Ratio_Non_Bin_Var
                 ]
 const pathRatio = "./RatioBeforeAfter/"
 
@@ -29,7 +30,8 @@ const fieldsAndCorrespondingOrderFunction = Dict{Symbol,Function}( # used in per
                                                                     :Time => minimum,
                                                                     :Nb_of_feasible_points_found => maximum,
                                                                     :Nb_of_maxTime_reached => minimum,
-                                                                    :Nb_of_maxTrials_reached => minimum
+                                                                    :Nb_of_maxTrials_reached => minimum,
+                                                                    :Avg_Ratio_Non_Bin_Var => minimum
                                                                  )
 #=
 If characteristicBis is null only the values for the given characteristic is given, 

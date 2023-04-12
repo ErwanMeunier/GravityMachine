@@ -9,8 +9,8 @@ const maxTime = 20
 
 function benchmarkGM()
     filenames::Vector{String} = readdir(instanceDirectory)
-    for max_ratio_bv_pr in 1:0.25:1
-        for max_ratio_bv_gi in (1:0.25:1)
+    for max_ratio_bv_pr in 0.:1.:0.
+        for max_ratio_bv_gi in 0:0.25:0.
             qualities = Vector{Float64}()
             nbcyclestotalVect = Vector{Int64}()
             nbcyclesMaxVect = Vector{Int64}()
@@ -20,9 +20,12 @@ function benchmarkGM()
             feasibleReached = Vector{Int64}()
             maxTimeReached = Vector{Int64}()
             maxTrialsReached = Vector{Int64}()
+            avgRatioNonBinVect = Vector{Float64}()
+            ontheborderVect = Vector{Float64}()
+            supportedPointsVect = Vector{Int64}()
             
             for instance in filenames
-                    etime, quality, nbcyclestotal, nbcyclesMax, tpn, fpn, nbFeasible, nbMaxTime, nbMaxTrials = GM(instance[4:end], tailleSampling, maxTrial, maxTime, max_ratio_bv_gi, max_ratio_bv_pr)
+                    etime, quality, nbcyclestotal, nbcyclesMax, tpn, fpn, nbFeasible, nbMaxTime, nbMaxTrials, avgRatioNonBin, ontheborder, nbsupportedpoint = GM(instance[4:end], tailleSampling, maxTrial, maxTime, max_ratio_bv_gi, max_ratio_bv_pr)
                     push!(qualities,quality)
                     push!(nbcyclestotalVect,nbcyclestotal)
                     push!(nbcyclesMaxVect,nbcyclesMax)
@@ -32,6 +35,9 @@ function benchmarkGM()
                     push!(feasibleReached,nbFeasible)
                     push!(maxTimeReached,nbMaxTime)
                     push!(maxTrialsReached,nbMaxTrials)
+                    push!(avgRatioNonBinVect,avgRatioNonBin)
+                    push!(ontheborderVect,ontheborder)
+                    push!(supportedPointsVect,nbsupportedpoint)
                     #=
                     For each column of the dataframe above, we have the evolution of the ratio of the number of 
                     floating point variables in the projection.
@@ -55,6 +61,8 @@ function benchmarkGM()
             output[!, :Nb_of_feasible_points_found]=feasibleReached
             output[!, :Nb_of_maxTime_reached]=maxTimeReached
             output[!, :Nb_of_maxTrials_reached]=maxTrialsReached
+            output[!, :Avg_Ratio_Non_Bin_Var] = avgRatioNonBinVect
+            output[!, :Supported_Sol] = ontheborderVect
             CSV.write("./results/resultsBinVar/"*string(max_ratio_bv_pr)*"-"*string(max_ratio_bv_gi)*".csv",output;delim=";")
         end
     end 

@@ -4,10 +4,10 @@ using Revise # allowing the redefinition of constant variables while compiling a
 
 println("""\nAlgorithme "Gravity machine" --------------------------------\n""")
 
-const verbose = true
+const verbose = false
 
 # Figures
-const graphic = true
+const graphic = false
 const savegraphic = false # set to false by default
 const savingDir = "./results/figuresSol/"
 
@@ -27,18 +27,28 @@ const slowtime = 0.
 const plotGenerators = true
 global generateurVisualise = -1
 
+global classic_GM::Bool = true
+
 global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
 global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
 global CHOICE_PERTUBATION = 2 # FROM 1 TO 3
 global CONES_CONSTRAINED_IMPROVE_GENERATORS::Bool = false # see transformLowerBoundedSet
 global PERTUB_SAME_SOL_PROJECTION::Bool = false # useless
+global diffGenerators::Bool = true # must be equal to true
 
 global IMPROVING_GENERATORS = true
 global PROJECTION_BinVar = true;
 global THRESHOLD_BinVar::Int64 = typemax(Int64)
 global MAX_RATIO_BinVar_GENERATOR_IMPROVEMENT::Float64 = 1. # Ratio of bin variables set binary into the generator improvement ~ Must be between 0 and 1 meaning 0% to 100%
 global MAX_RATIO_BinVar_PROJECTION::Float64 = 1. # Ratio of bin variables set binary into the projection
+
+if classic_GM 
+    MAX_RATIO_BinVar_GENERATOR_IMPROVEMENT = 0.
+    MAX_RATIO_BIN_PROJECTION = 0.
+    IMPROVING_GENERATORS = false
+    PROJECTION_BinVar = false
+end
 
 verbose ? println("-) Active les packages requis\n") : nothing
 using JuMP, HiGHS, PyPlot, Printf, Random # some useful packages
@@ -108,15 +118,38 @@ function split01(xTilde::Vector{Int})
    sizehint!(indices1,length(xTilde))
 
    for i=1:length(xTilde)
-       if xTilde[i] == 0
+       if isapprox(xTilde[i],0,atol=10^-3)
            push!(indices0,i)
-       else
-           push!(indices1,i)
+       else 
+            if isapprox(xTilde[i],1,atol=10^-3)
+                push!(indices1,i)
+            end
        end
     end
 
    return indices0, indices1
 end
+
+function split01_bis(xTilde::Vector{Float64})
+
+    indices0::Vector{Int64} = Vector{Int64}()
+    indices1::Vector{Int64} = Vector{Int64}()
+ 
+    sizehint!(indices0,length(xTilde))
+    sizehint!(indices1,length(xTilde))
+ 
+    for i=1:length(xTilde)
+        if isapprox(xTilde[i],0,atol=10^-3)
+            push!(indices0,i)
+        else 
+             if isapprox(xTilde[i],1,atol=10^-3)
+                 push!(indices1,i)
+             end
+        end
+     end
+ 
+    return indices0, indices1
+ end
 
 # ==============================================================================
 # Returns two vectors where: 
@@ -239,7 +272,7 @@ macro makearrow(expr, xbefore, ybefore, xafter, yafter, color)
             $(esc(expr))
             dX::Float64 = $(esc(xafter)) - arrowBaseX
             dY::Float64 = $(esc(yafter)) - arrowBaseY
-            println(dX,dY)
+            $(esc(verbose)) ? println(dX,dY) : nothing
             arrow(arrowBaseX, arrowBaseY, dX, dY, color=$(color))
         else 
             $(esc(expr))
@@ -252,8 +285,9 @@ end
 # ==============================================================================
 # Forces non-integers variables to be integer. Integer variables may become
 
-function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::Vector{tSolution{Float64}}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay, max_ratio_bv_gi::Float64)::Vector{tSolution{Float64}}
-    if IMPROVING_GENERATORS
+function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::Vector{tSolution{Float64}}, λ1::Vector{Float64}, λ2::Vector{Float64}, c1::Vector{Int}, c2::Vector{Int}, d::tListDisplay, max_ratio_bv_gi::Float64)::Tuple{Vector{tSolution{Float64}},Float64}
+    avgRatio::Float64 = 0
+    if IMPROVING_GENERATORS && (MAX_RATIO_BinVar_GENERATOR_IMPROVEMENT!=0)
         nbvar::Int = size(A,2)
         nbctr::Int = size(A,1)
         verbose ? println("NBVAR :", nbvar) : nothing
@@ -272,6 +306,7 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::
             @objective(model, Min, sum(cλ[j]*x[j] for j in 1:nbvar))
             @constraint(model, [i=1:nbctr],(sum((x[j]*A[i,j]) for j in 1:nbvar)) == 1)
 
+            # Conic constraints
             @expression(model, z1, sum(c1[j]*x[j] for j in 1:nbvar))
             @expression(model, z2, sum(c2[j]*x[j] for j in 1:nbvar))
             
@@ -298,11 +333,11 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::
                 end
             end
 
-            idx = [l for l in 1:(max(1,k-1)) if vg[l].sFea]
+            idx = [l for l in 1:(max(1,k-1))]
             #println("INDEX : ", idx)
 
             for q in idx
-                N0, N1 = split01(vg[q].sInt.x)
+                N0, N1 = split01_bis(vg[q].sRel.x)
                 verbose ? println("Generator : ", q) : nothing
                 verbose ? println("y1=", vg[q].sInt.y[1]) : nothing
                 verbose ? println("y2=", vg[q].sInt.y[2]) : nothing
@@ -313,7 +348,7 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::
                 @constraint(model, vg[q].sInt.y[1] <= obj1)
                 @constraint(model, vg[q].sInt.y[2] <= obj2)
                 =#
-                @constraint(model, sum(x[j] for j in N0) + sum(1-x[j] for j in N1) >= 1)
+                diffGenerators ? @constraint(model, sum(x[j] for j in N0) + sum(1-x[j] for j in N1) >= 1) : nothing
                 #rightMember = 0.001*sum(cλ)
                 #sum(cλ[j]*x[j] for j in N0) + sum(cλ[j] for j in N1)
                 #@constraint(model, sum(cλ[j]*x[j] for j in N0) + sum(cλ[j]*(1-x[j]) for j in N1) >= 1)
@@ -326,9 +361,8 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::
             idxNonInt::Vector{Int} = [i for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0.,atol=10^-3)||isapprox(vg[k].sRel.x[i],1.,atol=10^-3))]
             verbose ? println("Number of non integral variables:", length(idxNonInt)) : nothing
             idxNonInt = sort(idxNonInt, by=i->abs(vg[k].sRel.x[i]-1/2)) # The more x is close to 1/2 the more it is lucky to become a binary variable
+            avgRatio += length(idxNonInt)/nbvar # benchmark
 
-            #nbBinVar = THRESHOLD_BinVar
-            # TODO : THRESHOLD
             nbBinVar = Int(ceil((max_ratio_bv_gi* length(idxNonInt))))
             verbose ? println("Number of variables set integral: ", nbBinVar) : nothing
             for i in idxNonInt[1:min(end,nbBinVar)]
@@ -377,9 +411,9 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::
             end
         end
         #break # TO BE REMOVED
-        return Limproved #  (new) improved Lower Bound Set
+        return Limproved, avgRatio/length(vg)#  (new) improved Lower Bound Set
     else
-        return L
+        return L, avgRatio
     end
 end
 
@@ -499,7 +533,7 @@ function GM( fname::String,
         λ1::Vector{Float64}, λ2::Vector{Float64} = interface_computeDirections(L,vg)
         verbose ? println("---> Directions computed") : nothing
         
-        Limproved::Vector{tSolution{Float64}} = transformLowerBoundedSet!(vg,A,L,λ1,λ2,c1,c2,d,max_ratio_bv_gi)
+        Limproved::Vector{tSolution{Float64}}, avgRatioNonBin::Float64 = transformLowerBoundedSet!(vg,A,L,λ1,λ2,c1,c2,d,max_ratio_bv_gi)
         verbose ? println("---> Generators improved") : nothing
 
         λ1, λ2 = interface_computeDirections(Limproved,vg) # TODO: with new generators
@@ -547,8 +581,8 @@ function GM( fname::String,
                 β = 0.#0.4 + 0.6*trial/maxTrial
                 γ = 1.
                 nbcyclesMax = max(nbcyclesMax,nbcycles)
-                println("   α = ", α)
-                println("   β = ", β)
+                verbose ? println("   α = ", α) : nothing
+                verbose ? println("   β = ", β) : nothing
                 # projecting solution : met a jour sPrj, sInt, sFea dans vg --------
  
                 @makearrow projectingSolution!(A,vg,k,c1,c2,d,λ1,λ2,α,max_ratio_bv_pr) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sPrj.y[1] vg[k].sPrj.y[2] "red"
@@ -692,7 +726,10 @@ function GM( fname::String,
         close()
     end
     # TEMPORARY TO BENCHMARK
-    return etime, quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials
+    f(a,b) = (a,b)
+    ontheborder = length(intersect(f.(XN,YN),f.(X_EBP,Y_EBP))) / length(XN)
+
+    return etime, quality*100, nbcyclestotal, nbcyclesMax, length(XN), length(X_EBP), nbFeasible, nbMaxTime, nbMaxTrials, avgRatioNonBin, ontheborder, length(XN)
 end
 
 # ==============================================================================
@@ -708,7 +745,8 @@ end=#
 #@time GM("sppnw11.txt", 6, 20, 20)
 #@time GM("sppnw23.txt",6,20,20)
 #@time GM("sppnw31.txt", 6, 20, 20)
-@time GM("sppnw40.txt", 6, 20, 20)
+
+#@time GM("sppnw40.txt", 6, 20, 20)
 #@time GM("didactic5.txt", 5, 5, 10)
 #@time GM("sppnw29.txt", 6, 30, 20)
 #nothing

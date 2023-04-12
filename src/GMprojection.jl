@@ -190,7 +190,7 @@ function Δ2SPABelgique2(A::Array{Int,2}, xTilde::Array{Int,1}, k::Int64,
     # end - diff constraint
     optimize!(proj)
 
-    if PROJECTION_BinVar
+    if PROJECTION_BinVar && (max_ratio_bv_pr!=0.)
         xOutput = value.(x)
 
         idxNonInt::Vector{Int} = [i for i=1:nbvar if !(isapprox(xOutput[i],0,atol=10^-3)||isapprox(xOutput[i],1,atol=10^-3))]
