@@ -597,8 +597,6 @@ function GM( fname::String,
                     @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
                     slowexec ? sleep(slowtime) : nothing
 
-                    push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
-
                     println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
 
                     # test detection cycle sur solutions entieres ------------------
@@ -611,6 +609,7 @@ function GM( fname::String,
                         slowexec ? sleep(slowtime) : nothing
                         #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                     end
+                    push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
                 end
             end
             nbcyclestotal += nbcycles

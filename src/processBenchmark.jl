@@ -5,7 +5,7 @@ using HypothesisTests
 import PyPlot
 const plt = PyPlot
 plt.pygui(true)
-const path = "./results/resultsBinVar/No cones for separation/"
+const path = "./results/resultsBinVar/12 April/"
 const pathPP = "./performanceProfile/"
 const fields = [:Quality, 
                 :Number_Of_Cycles, 
@@ -16,7 +16,8 @@ const fields = [:Quality,
                 :Nb_of_feasible_points_found,
                 :Nb_of_maxTime_reached,
                 :Nb_of_maxTrials_reached,
-                :Avg_Ratio_Non_Bin_Var
+                :Avg_Ratio_Non_Bin_Var,
+                :Supported_Sol
                 ]
 const pathRatio = "./RatioBeforeAfter/"
 
@@ -86,7 +87,7 @@ function plotQualities(filename::String, characteristic::Symbol, characteristicB
     plt.close(fig)
 end
 
-function plotQualitiesScatterLine(characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"0.0-0.0.csv")
+function plotQualitiesScatterLine(characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"ref.csv")
     # parsing 
     refDf = DataFrame(CSV.File(refFile))
     # getting some informations
@@ -124,7 +125,7 @@ function plotQualitiesScatterLine(characteristic::Symbol, characteristicBis=noth
     colorIdx = 1
     colorSet = ["seagreen","maroon","chocolate","darkviolet","lawngreen","royalblue"]
 
-    for filename in [file for file in readdir(path) if (file[end-3:end]==".csv") && (file!="0.0-0.0.csv")]
+    for filename in [file for file in readdir(path) if (file[end-3:end]==".csv") && (file!="ref.csv")]
         df = DataFrame(CSV.File(path*filename))
         characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
         maxy = max(maximum(characteristicRef),maximum(characteristicCurrent),maxY)

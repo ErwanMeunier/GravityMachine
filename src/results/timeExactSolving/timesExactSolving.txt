@@ -1,0 +1,179 @@
+Instance: biosppnw01.txt
+--> exported
+419.6718556880951
+- - - - - - - - 
+Instance: biosppnw03.txt
+--> exported
+249.29756426811218
+- - - - - - - - 
+Instance: biosppnw04.txt
+-1.0
+- - - - - - - - 
+Instance: biosppnw06.txt
+--> exported
+23.98132038116455
+- - - - - - - - 
+Instance: biosppnw07.txt
+--> exported
+22.691410779953003
+- - - - - - - - 
+Instance: biosppnw08.txt
+--> exported
+0.451387882232666
+- - - - - - - - 
+Instance: biosppnw09.txt
+--> exported
+8.196125030517578
+- - - - - - - - 
+Instance: biosppnw10.txt
+--> exported
+0.6462008953094482
+- - - - - - - - 
+Instance: biosppnw11.txt
+--> exported
+11.7932767868042
+- - - - - - - - 
+Instance: biosppnw12.txt
+--> exported
+0.20421218872070312
+- - - - - - - - 
+Instance: biosppnw13.txt
+--> exported
+42.39213991165161
+- - - - - - - - 
+Instance: biosppnw14.txt
+--> exported
+616.5366630554199
+- - - - - - - - 
+Instance: biosppnw15.txt
+--> exported
+0.320298433303833
+- - - - - - - - 
+Instance: biosppnw16.txt
+^C^Z
+[1]+  Arrêté                julia
+(base) erwan@erwan-XPS-13-9300:~/Documents/GIT/GravityMachine/src/solveSPAexactly$ julia
+               _
+   _       _ _(_)_     |  Documentation: https://docs.julialang.org
+  (_)     | (_) (_)    |
+   _ _   _| |_  __ _   |  Type "?" for help, "]?" for Pkg help.
+  | | | | | | |/ _` |  |
+  | | |_| | | | (_| |  |  Version 1.8.5 (2023-01-08)
+ _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
+|__/                   |
+
+julia> include("solveSPA.jl")
+main (generic function with 1 method)
+
+julia> include("solveSPA.jl")
+main (generic function with 1 method)
+
+Instance: biosppnw17.txt
+--> exported
+604.3621907234192
+- - - - - - - - 
+Instance: biosppnw18.txt
+--> exported
+84.66538691520691
+- - - - - - - - 
+Instance: biosppnw19.txt
+--> exported
+6.222768306732178
+- - - - - - - - 
+Instance: biosppnw20.txt
+--> exported
+1.9379379749298096
+- - - - - - - - 
+Instance: biosppnw21.txt
+--> exported
+1.3566961288452148
+- - - - - - - - 
+Instance: biosppnw22.txt
+--> exported
+2.1798717975616455
+- - - - - - - - 
+Instance: biosppnw23.txt
+--> exported
+0.7757096290588379
+- - - - - - - - 
+Instance: biosppnw24.txt
+--> exported
+4.254713296890259
+- - - - - - - - 
+Instance: biosppnw25.txt
+--> exported
+3.6756250858306885
+- - - - - - - - 
+Instance: biosppnw26.txt
+--> exported
+1.4663069248199463
+- - - - - - - - 
+Instance: biosppnw27.txt
+--> exported
+2.6415131092071533
+- - - - - - - - 
+Instance: biosppnw28.txt
+--> exported
+3.190052032470703
+- - - - - - - - 
+Instance: biosppnw29.txt
+--> exported
+10.492564678192139
+- - - - - - - - 
+Instance: biosppnw30.txt
+--> exported
+10.215368032455444
+- - - - - - - - 
+Instance: biosppnw31.txt
+--> exported
+21.038674116134644
+- - - - - - - - 
+Instance: biosppnw32.txt
+--> exported
+0.2023918628692627
+- - - - - - - - 
+Instance: biosppnw33.txt
+--> exported
+23.117188692092896
+- - - - - - - - 
+Instance: biosppnw34.txt
+--> exported
+3.899639368057251
+- - - - - - - - 
+Instance: biosppnw35.txt
+--> exported
+7.960282564163208
+- - - - - - - - 
+Instance: biosppnw36.txt
+--> exported
+8.188941478729248
+- - - - - - - - 
+Instance: biosppnw37.txt
+--> exported
+2.6915700435638428
+- - - - - - - - 
+Instance: biosppnw38.txt
+--> exported
+4.343502521514893
+- - - - - - - - 
+Instance: biosppnw39.txt
+--> exported
+2.6467342376708984
+- - - - - - - - 
+Instance: biosppnw40.txt
+--> exported
+0.7062962055206299
+- - - - - - - - 
+Instance: biosppnw41.txt
+--> exported
+0.22144055366516113
+- - - - - - - - 
+Instance: biosppnw42.txt
+--> exported
+3.1664681434631348
+- - - - - - - - 
+Instance: biosppnw43.txt
+--> exported
+10.29339075088501
+- - - - - - - - 
+"../results/timeExactSolving.csv"
