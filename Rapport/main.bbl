@@ -1,0 +1,43 @@
+\begin{thebibliography}{}
+
+\bibitem[gur, ]{gurobiNumIssues}
+{G}urobi {G}uidelines for {N}umerical {I}ssues - {G}urobi {O}ptimization ---
+  gurobi.com.
+\newblock
+  \url{https://www.gurobi.com/documentation/9.0/refman/num_grb_guidelines_for_num.html}.
+\newblock [Accessed 06-Apr-2023].
+
+\bibitem[Balas and Jeroslow, 1972]{canonical_cut}
+Balas, E. and Jeroslow, R. (1972).
+\newblock Canonical cuts on the unit hypercube.
+\newblock {\em SIAM Journal on Applied Mathematics}, 23(1):61--69.
+
+\bibitem[Bezanson et~al., 2017]{Julia-2017}
+Bezanson, J., Edelman, A., Karpinski, S., and Shah, V.~B. (2017).
+\newblock Julia: A fresh approach to numerical computing.
+\newblock {\em SIAM {R}eview}, 59(1):65--98.
+
+\bibitem[Chankong and Haimes, 1983]{Chankong1983MultiobjectiveDM}
+Chankong, V. and Haimes, Y.~Y. (1983).
+\newblock Multiobjective decision making: Theory and methodology.
+
+\bibitem[Ehrgott, 2005]{MultOptEhrgott}
+Ehrgott, M. (2005).
+\newblock {\em Multicriteria Optimization {(2.} ed.)}.
+\newblock Springer.
+
+\bibitem[Ehrgott and Gandibleux, 2001]{boundssetsXGME}
+Ehrgott, M. and Gandibleux, X. (2001).
+\newblock Bounds and bound sets for biobjective combinatorial optimization
+  problems.
+\newblock In K{\"o}ksalan, M. and Zionts, S., editors, {\em Multiple Criteria
+  Decision Making in the New Millennium}, pages 241--253, Berlin, Heidelberg.
+  Springer Berlin Heidelberg.
+
+\bibitem[Gandibleux et~al., 2021]{gravitymachine}
+Gandibleux, X., Gasnier, G., and Hanafi, S. (2021).
+\newblock A primal heuristic to compute an upper bound set for multi-objective
+  0-1 linear optimisation problems.
+\newblock Online. Springer.
+
+\end{thebibliography}

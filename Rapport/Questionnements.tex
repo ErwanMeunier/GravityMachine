@@ -1,0 +1,60 @@
+\section{Questionnements et idées}
+Légende : \hl{$\Box$} signifie "point important"
+Pour le 17/01
+\begin{itemize}
+    \item \hl{$\Box$} \textsc{PerturbSolution} $\leadsto$ Mesurer l'impact de $T$ sur FP ?
+    \begin{itemize}
+        \item Cela a-t-il déjà été mesuré dans le cas mono-objectif ?
+        \item Peut-on transférer de potentielles conclusions du mono sur du multi ?
+        \item Possibilité de faire bouger $T$ en fonction de l'avancement dans l'algorithme ? Comment ? $\leadsto$ Patch pour diminuer le cyclage ?
+    \end{itemize}
+    \item \hl{$\Box$} Mesurer l'impact de \texttt{tailleSampling} sur le ration $\frac{quality}{time}$
+    \item Seuil de tolérance dans \textsc{roundingSolution} $\leadsto$ atol=$10^{-3}$ pas un peu trop grand ? Standard ?
+    \item \hl{$\Box$} Utiliser l'amélioration de FP proposée par~\cite{improvedFP}
+    \item Point de détail pas important : \textsc{elaborePointConeOuvertversL} considère les points dans l'ordre inverse de la convention graphique adoptée dans l'article \textit{i.e.} les $y_k$ ne "descendent pas au fur et à mesure que $k$ est grand" mais l'inverse. 
+    \item Mesurer en quel proportion $p_N$ domine $p_C$ dans la conditionnelle de \textsc{elaborePointConeOuvertversL} $\leadsto$ pour quel(s) impact(s) ?
+    \item L'article affirme que \textsc{GravityMachine} n'est pas problème dépendant, cependant son efficacité est seulement mesurée sur le SPA qui a par hypothèse une structure particulière ?
+    \item $\leadsto$ Générer des instances aléatoirement sans structure autres que les contraintes d'intégrités et benchmarker en fonction des caractéristiques de chaque instance : nombre de contraintes, contraintes très "couvrantes", nombre de variables, etc $\leadsto$ Existe-t-il des mesures pertinentes des caractéristiques d'une instance ?
+    \item ??? Fractions pour $\lambda_1$ et $\lambda_2$ dans \textsc{calculerDirections2} peuvent-être simplifiées en $\frac{\Delta y}{\Delta x + \delta y}$ et $\frac{\Delta x}{\Delta x + \Delta y}$. En regardant le \textsc{$\Delta$SPA2bis} et \textsc{calculerDirections2} j'ai les intuitions suivantes :
+    \begin{itemize}
+        \item Plus $\Delta y$ est grand plus 
+    \end{itemize}
+\end{itemize}
+Pour le 24/01
+\begin{itemize}
+    \item Tester les composants de manière indépendante : \url{https://uditagarwal.in/understanding-dependency-graphs-for-program-analysis/}
+    \item Analyser les points qui voient le moins de contraintes
+    \item Utiliser le centre analytique pour guider les arrondis
+\end{itemize}
+Pour le 31/01
+\begin{itemize}
+    \item Densifier  les générateurs quand on se rapproche de la droite $z^2(x)=z^1(x)$
+    \item Restreindre la recherche par cône en utilisant le point idéal
+    \item 
+\end{itemize}
+\section{Objectifs}
+Pour la séance du 24/01
+\begin{itemize}
+    \item Choix de la projection
+    \begin{itemize}
+        \item Autres normes
+        \item Actions sur $\lambda$ 
+        \begin{itemize}
+            \item Faire varier le $\lambda$ entre bornes $\leadsto$ alterner phases d'intensifications et de diversifications
+            \item Pondérer l'importance des objectifs avec $\lambda_{a,b} = a\lambda_1 c_1  + b\lambda_2 c_2$
+        \end{itemize}
+        \item Taille du sampling $\leadsto$ en déduire une borne sur les secteurs angulaires des cônes
+        \item Calculer l'admissibilité de points entiers dans le cône puis tracer une famille de $\lambda_h$ selon quelques solutions entières admissibles.
+    \end{itemize}
+    \item Fixer $T$ convenablement en fonction de la taille du problème / valuation dynamique de $T$
+\end{itemize}
+Pour la séance du 09/02
+\begin{itemize}
+    \item 
+\end{itemize}
+Discussion annexes :
+\begin{itemize}
+    \item Validation de la pertinence de chaque version de chaque fonctionnalité et les interactions entre elles  $\leadsto$~\cite{irace}
+    \item Générateurs d'instances 01 MO $\leadsto$ Voir mail de Xavier
+\end{itemize}
+

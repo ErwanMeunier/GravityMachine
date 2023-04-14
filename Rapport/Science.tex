@@ -1,0 +1,75 @@
+\section{Soft constraint on cones}
+
+
+\section{Improving generators}
+Generators are obtained by using the $\epsilon$-constraints method which is one of the well-known scalarization techniques \cite{Chankong1983MultiobjectiveDM} aimed at getting a sample of efficient solutions of a MOLP. Those generators form an efficient set for the relaxed problem. That is to say, the set of all generators is also the lower bound set $L$. Since GM starts the search based on each $k$-th generator, one would like to have a better initial solution in order to reach a feasible solution faster.
+
+\subsection{Bug in Gravity Machine}
+The previous version of Gravity Machine used the GLPK solver to generate the lower bound set by the $\epsilon$-constraints method. However, the models used for the generators "close to the center" are more constrained than the other ones. Since, considered problem have lot of constraints and variables some numerical issues may arise \cite{gurobiNumIssues}.
+\subsection{Empirical findings}
+Empirical evidences tend to show that very few variables are set to non-integral value for each generator.
+%TODO
+
+\subsection{Setting some variables binary}
+At first sight, non-solved to integrality variables should be set binary and the problem re-optimized. The latter allows GM to find initial solution Then, a generator closer to $Y$ should result from a the re-optimization process. However, several issues arises:
+
+\subsubsection{Communicating vessels effect}
+As not all constraints are set binary, some variables found to be zero or one might become fractional. A number of variables found fractional after the second stage solving greater than the number of variables found fractional after the first stage solving represents the worst case. 
+As far as our experimental data shows us, this situation is very rare.
+%TODO
+\subsubsection{Same generators lead to the same solution}
+\paragraph{Canonical cut constraint}
+Provided a feasible solution $s$ known to be binary, the following constraint allows the solving process to avoid returning $s$ as a solution \cite{canonical_cut}:
+\[
+\sum_{j \in \set{i \mid s_i = 0}}x_j +  \sum_{j \in \set{i \mid s_i = 1}}1-x_j \geq 1
+\]
+\textcolor{red}{The lower bound set is no longer guaranteed}
+\paragraph{Cones}
+
+\begin{algorithm}
+\caption{Improving generators}\label{alg:Generators_improvement}
+\KwData{$L$,$\lambda_1$,$\lambda_2$,$\tau$,$\alpha$}
+\KwResult{$L_I$,$U$}
+\Begin{
+ $L,F \gets \textsc{ComputeGenerators}(\mathcal{D},n_L)$\;
+ \ForAll(//each $k$-th unfeasible gen){$z(\bar{x}^k)\in L,\Bar{x}^k\notin F$}{
+  timeStart $\gets \textsc{Time}()$; trial $\gets 0$\;
+  timeout $\gets$ false; feasible $\gets$ false\;
+  $\Tilde{x},H,cycle \gets \textsc{RoundingSolution}(\bar{x}^k,H)$\;
+  \While{$\neg feasible \land \neg timeout$}{
+   trial $\gets$ trial $+1$\;
+   $\Bar{x},F$,feasible $\gets \textsc{ProjectSolution}(\Tilde{x})$\;
+   \If{$\neg feasible$}{
+        $\Tilde{x},H,cycle \gets \textsc{RoundingSolution}(\Bar{x},k,h)$\;
+        \If{cycle}{
+            $\Tilde{x}\gets\textsc{PerturbSolution}(\Tilde{x})$\;
+        }
+    }
+    timeout $\gets$ (time()-timeStart $\geq$ maxTime) $\lor$ (trial=maxTrial)\;
+   }
+ }
+ $U \gets \textsc{ExtractNonDominatedPoint}(F)$\;
+ }
+\end{algorithm}
+\subsubsection{Too much binary variables increase the solving time}
+As shown by our empirical data, less than 20
+
+\section{Improving projection}
+By the same token as the generators improvement, the projection used during GM can be improved by adding some integrity constraints on the non 
+
+\section{Numerical experiments}
+Gravity Machine is implemented in Julia 1.8.5 \cite{Julia-2017}
+\subsection{Numerical instances}
+\subsection{Quality measure}
+\subsection{Numerical results}
+Experiments have been performed on-top of the following configuration:
+\begin{itemize}
+    \item Laptop: Dell - XPS 13 9300
+    \item OS: Linux Mint 21.1 Cinnamon - v5.6.8
+    \item Kernel version: 5.19.0-38-generic
+    \item Intel© Core™ i7-1065G7 CPU @ 1.30GHz × 4
+    \item L1: 320 KiB, L2: 2 MiB, L3: 8 MiB
+    \item RAM: 15.2 Go LDDR4
+    \item SSD: 1024.2 Go
+\end{itemize}
+\subsubsection{}

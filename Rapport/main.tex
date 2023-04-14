@@ -1,0 +1,77 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{array}% figures in tables
+\usepackage[export]{adjustbox} % crop graphics
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{hyperref}
+\usepackage{amsthm}
+\usepackage{tikz}
+\usepackage{stmaryrd} % pour les brackets
+\usepackage{mathtools} % pour mathclap
+\usepackage{soul} % \hl
+%\usepackage{ulem}
+\usepackage[english, onelanguage, ruled, lined, linesnumbered]{algorithm2e}
+\usepackage{listings}
+\usepackage[colorinlistoftodos]{todonotes}%TITLEPAGE
+%\usepackage{algorithm2e}
+\usepackage{pgf,tikz}
+\usepackage{pstricks-add}
+\usetikzlibrary{arrows}
+
+\title{MO-MILP Primal Heuristics\\ \large{Improvement of Gravity Machine}}
+\author{Erwan Meunier}
+\date{Computing Project, Nantes Université
+\\ under the supervision of Xavier Gandibleux and Saïd Hanafi
+\\ January - May 2023}
+%Changer les marges
+
+\def\noteXavier#1{\textcolor{olive}{\scriptsize [XG] #1}}
+\def\noteSaid#1{\textcolor{red}{\scriptsize [SH] #1}}
+\def\noteErwan#1{\marginpar{\textcolor{brown}{\scriptsize [EM] #1}}}
+
+\newcommand{\set}[1]{\left\lbrace #1 \right\rbrace}
+
+%\RestyleAlgo{ruled}
+
+%% This is needed if you want to add comments in
+%% your algorithm with \Comment
+\SetKwComment{Comment}{/* }{ */}
+
+\newtheorem{definition}{Definition}
+
+\begin{document}
+\input{titlepage}
+%\maketitle
+\newpage
+\tableofcontents
+\newpage
+\input{Abstract}
+
+\newpage
+\input{Introduction}
+
+\newpage
+\input{definitions_notations}
+
+\input{Background}
+
+\input{Science}
+
+\input{code}
+
+\input{Conclusion}
+
+\input{Annexe}
+
+%\input{Questionnements}
+
+\newpage
+\bibliographystyle{apalike}
+\bibliography{biblio.bib}
+
+\end{document}

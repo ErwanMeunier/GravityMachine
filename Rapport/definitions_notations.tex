@@ -1,0 +1,45 @@
+\section{Definitions and Notations}
+We consider the problem as presented in \cite{gravitymachine}. The multi-objective 0-1 linear optimisation problems with $p$ objectives ($p$-01LP) considered can be formulated as follows:
+\begin{align*}
+    \min z(x)&=Cx\\
+    \text{subject to } Ax &\leqq b\\
+    x &\in \set{0,1}^n
+\end{align*}
+where
+\begin{itemize}
+    \item $x\in \set{0,1}^n$, the vector of $n$ binary variables $x_j, j=1,\ldots,n$;
+    \item $A\in\mathbb{R}^{m\times n}$, the $m$ constraints $A_ix \leq b_i, \; i=1,\ldots,m$ and $b\in \mathbb{R}^m$;
+    \item $C \in \mathbb{R}^{p\times n}$, the objective matrix where $p \geq 2$;
+    \item $X:=\set{x\in\set{0,1}^n\mid Ax \leqq b} \subseteq \mathbb{R}^n$, the set of feasible solutions, with $\mathbb{R}^n$ the decision space;
+    \item $Y:=\set{Cx\mid x \in X}\subseteq\mathbb{R}^p$, the outcome set, with $\mathbb{R}^p$ the objective space.
+\end{itemize}
+Thereafter, $p$ is usually meant to be equal to $2$ (\textit{e.g.} we consider the bi-objective class of problems).
+\begin{definition}[\cite{MultOptEhrgott}]
+A feasible solution $\hat{x}\in\mathcal{X}$ is called efficient or Pareto optimal if there is no other $x \in \mathcal{X}$ such that $f(x)\leq f(\hat{x})$. If $\hat{x}$ is efficient, $f(\hat{x})$ is called nondominated point. If $x^1, x^2 \in \mathcal{X}$ and $f(x^1)\leq f(x^2)$ we say $x^1$ dominates $x^2$ and $f(x^1)$ dominates $f(x^2)$. The set of all efficient solutions $\hat{x} \in \mathcal{X}$ is denoted $\mathcal{X}_E$ and called the efficient set. The set of all nondominated points $\hat{y}=f(\hat{x})\in\mathcal{Y}$, where $\hat{x}\in\mathcal{X}_E$, is denoted $\mathcal{Y}_N$ and called the nondominated set.
+\end{definition}
+\begin{definition}[\cite{MultOptEhrgott}]
+A feasible solution $\hat{x}\in \mathcal{X}$ is called weakly efficient (weakly Pareto optimal) if there is no $x\in \mathcal{X}$ such that $f(x)<f(\hat{x})$, \textit{i.e.} $f_k(x)<f_k(\hat{x})$ for all $k=1,\ldots,p$. The point $\hat{y}=f(\hat{x})$ is then called weakly nondominated. A feasible solution $\hat{x}\in\mathcal{X}$ is called strictly efficient (strictly Pareto optimal) if there is no $x\in\mathcal{X}$,$x\neq\hat{x}$ such that $f(x)\leqq f(\hat{x})$. The weakly (strictly) efficient and nondominated sets are denoted $\mathcal{X}_{wE}(\mathcal{X}_{sE})$ and $ \mathcal{Y}_{wE}$, respectively. 
+\end{definition}
+
+\begin{definition}[A lower bound set~\cite{boundssetsXGME}]
+A lower bound set for $Y'$ is a subset $L \subseteq \mathbb{R}^p$
+\begin{enumerate}
+    \item For each $y\in Y'$ there is some $l\in L$ such that $l\leqq y$
+    \item There is no pair $y\in Y',l\in L$ such that $y$ dominates $l$.
+\end{enumerate}
+\end{definition}
+\begin{definition}[An upper bound set~\cite{boundssetsXGME}]
+An upper bound set for $Y'$ is a subset $U \subset \mathbb{R}^p$
+\begin{enumerate}
+    \item For each $y\in Y'$ there is some $u\in U$ such that $y\leqq u$
+    \item There is no pair $y\in Y',\in U$ such that $u$ dominates $y$.
+\end{enumerate}
+\end{definition}
+%\include{figures_tikz/solution_space1}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.45]{figures_tikz/figure1_exempleCOST.png}
+    \caption{Projection of the solution space onto the cost space}
+    \label{fi:costspace}
+\end{figure}

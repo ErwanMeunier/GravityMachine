@@ -1,0 +1,35 @@
+\pagestyle{empty}
+\definecolor{ttfftt}{rgb}{0.2,1,0.2}
+\definecolor{ffwwww}{rgb}{1,0.4,0.4}
+\definecolor{qqttff}{rgb}{0,0.2,1}
+\definecolor{qqqqff}{rgb}{0,0,1}
+\definecolor{ttttff}{rgb}{0.2,0.2,1}
+\definecolor{fftttt}{rgb}{1,0.2,0.2}
+\definecolor{cqcqcq}{rgb}{0.75,0.75,0.75}
+\begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=10.0cm,y=10.0cm]
+\draw [color=cqcqcq,dash pattern=on 2pt off 2pt, xstep=2.0cm,ystep=2.0cm] (-0.4,-0.2) grid (1.4,1.2);
+\draw[->,color=black] (-0.4,0) -- (1.4,0);
+\foreach \x in {-0.4,-0.2,0.2,0.4,0.6,0.8,1,1.2,1.4}
+\draw[shift={(\x,0)},color=black] (0pt,2pt) -- (0pt,-2pt) node[below] {\footnotesize $\x$};
+\draw[->,color=black] (0,-0.2) -- (0,1.2);
+\foreach \y in {-0.2,0.2,0.4,0.6,0.8,1}
+\draw[shift={(0,\y)},color=black] (2pt,0pt) -- (-2pt,0pt) node[left] {\footnotesize $\y$};
+\draw[color=black] (0pt,-10pt) node[right] {\footnotesize $0$};
+\clip(-0.4,-0.2) rectangle (1.4,1.2);
+\fill[color=ttfftt,fill=ttfftt,fill opacity=0.1] (0,1) -- (1,1) -- (1,0) -- cycle;
+\draw [line width=1.6pt,dash pattern=on 3pt off 3pt,color=ffwwww,domain=-0.4:1.4] plot(\x,{(--1-1*\x)/1});
+\draw [color=ttfftt] (0,1)-- (1,1);
+\draw [color=ttfftt] (1,1)-- (1,0);
+\draw [color=ttfftt] (1,0)-- (0,1);
+\begin{scriptsize}
+\fill [color=fftttt] (0,0) circle (2.5pt);
+\draw[color=fftttt] (0.05,0.04) node {$(0, 0)$};
+\fill [color=ttttff] (0,1) circle (2.5pt);
+\draw[color=ttttff] (0.05,1.04) node {$(0, 1)$};
+\fill [color=qqqqff] (1,1) circle (2.5pt);
+\draw[color=qqqqff] (1.05,1.04) node {$(1, 1)$};
+\fill [color=qqttff] (1,0) circle (2.5pt);
+\draw[color=qqttff] (1.05,0.04) node {$(1, 0)$};
+\draw[color=ffwwww] (-0.59,1.67) node {$x + y = 1$};
+\end{scriptsize}
+\end{tikzpicture}
