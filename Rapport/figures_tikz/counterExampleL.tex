@@ -1,0 +1,54 @@
+\definecolor{ffwwww}{rgb}{1,0.4,0.4}
+\definecolor{ffqqtt}{rgb}{1,0,0.2}
+\definecolor{ffttqq}{rgb}{1,0.2,0}
+\definecolor{qqzzqq}{rgb}{0,0.6,0}
+\definecolor{ttttff}{rgb}{0.2,0.2,1}
+\definecolor{wwwwff}{rgb}{0.4,0.4,1}
+\definecolor{cqcqcq}{rgb}{0.75,0.75,0.75}
+\begin{figure}
+\scalebox{15}{
+\begin{tikzpicture}[line cap=round,line join=round,>=triangle 45,x=1.0cm,y=1.0cm,scale=0.5,]
+\draw [color=cqcqcq,dash pattern=on 1pt off 1pt, xstep=0.1cm,ystep=0.1cm] (-0.1,-0.1) grid (1.1,1.1);
+\draw[->,color=black] (-0.1,0) -- (1.1,0);
+\foreach \x in {,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1}
+\draw[shift={(\x,0)},color=black] (0pt,2pt) -- (0pt,-2pt) node[below] {\footnotesize $\x$};
+\draw[->,color=black] (0,-0.1) -- (0,1.1);
+\foreach \y in {,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.1}
+\draw[shift={(0,\y)},color=black] (2pt,0pt) -- (-2pt,0pt) node[left] {\footnotesize $\y$};
+\draw[color=black] (0pt,-10pt) node[right] {\footnotesize $0$};
+\clip(-0.1,-0.1) rectangle (1.1,1.1);
+\fill[color=qqzzqq,fill=qqzzqq,fill opacity=0.1] (0,1) -- (0,0.25) -- (0.25,0) -- (0.75,0) -- (1,0.25) -- (1,1) -- cycle;
+\fill[color=ffttqq,fill=ffttqq,fill opacity=0.1] (0,0.25) -- (0,0) -- (0.25,0) -- cycle;
+\fill[color=ffttqq,fill=ffttqq,fill opacity=0.1] (0.75,0) -- (1,0) -- (1,0.25) -- cycle;
+\draw [domain=-0.1:1.1] plot(\x,{(--0.25-1*\x)/1});
+\draw [domain=-0.1:1.1] plot(\x,{(-0.75--1*\x)/1});
+\draw [color=qqzzqq] (0,1)-- (0,0.25);
+\draw [color=qqzzqq] (0,0.25)-- (0.25,0);
+\draw [color=qqzzqq] (0.25,0)-- (0.75,0);
+\draw [color=qqzzqq] (0.75,0)-- (1,0.25);
+\draw [color=qqzzqq] (1,0.25)-- (1,1);
+\draw [color=qqzzqq] (1,1)-- (0,1);
+\draw [color=ffttqq] (0,0.25)-- (0,0);
+\draw [color=ffttqq] (0,0)-- (0.25,0);
+\draw [color=ffttqq] (0.25,0)-- (0,0.25);
+\draw [color=ffttqq] (0.75,0)-- (1,0);
+\draw [color=ffttqq] (1,0)-- (1,0.25);
+\draw [color=ffttqq] (1,0.25)-- (0.75,0);
+\draw [->,line width=3.6pt,color=ffqqtt] (0,0) -- (0.3,0.3);
+\draw [dash pattern=on 1pt off 1pt,color=ffwwww,domain=-0.1:1.1] plot(\x,{(-0-1*\x)/1});
+\begin{scriptsize}
+\fill [color=wwwwff] (0,1) circle (4.5pt);
+\draw[color=wwwwff] (0.03,1.03) node {$(0, 1)$};
+\fill [color=wwwwff] (0,0) circle (4.5pt);
+\draw[color=wwwwff] (0.03,0.04) node {$(0, 0)$};
+\fill [color=wwwwff] (1,0) circle (4.5pt);
+\draw[color=wwwwff] (1.03,0.04) node {$(1, 0)$};
+\fill [color=wwwwff] (1,1) circle (4.5pt);
+\draw[color=wwwwff] (1.03,1.03) node {$(1, 1)$};
+\draw [color=ttttff] (0,0.25)-- ++(-4.5pt,0 pt) -- ++(9.0pt,0 pt) ++(-4.5pt,-4.5pt) -- ++(0 pt,9.0pt);
+\draw[color=ttttff] (0.01,0.29) node {$E$};
+\draw[color=ffqqtt] (0.18,0.17) node {$(0.3, 0.3)$};
+\end{scriptsize}
+\end{tikzpicture}
+}
+\end{figure}
