@@ -15,8 +15,10 @@ The termination status is now considered and GM properly fails if a generator is
 Tolerance attribute was hand-tuned to allow the solver to find a feasible solution. \noteErwan{ça serait bien que ce ne soit pas "hand-tuned" \url{}https://discourse.julialang.org/t/scalling-both-primal-and-dual-feasibility-tolerance-according-to-the-size-of-the-problem/97455}.
 It is worth noticing that no difference in the performance has been observed. The robustness is the matter here.
 In addition, GLPK was replaced by HiGHS~\cite{highs}. Indeed, the latter shows better performances than GLPK~\cite{bench_solver} and is still open-source.
+
 \subsubsection*{Soft conic constraints $\lambda_1$ and $\lambda_2$}
-The $\lambda_1$
+Both vectors $\lambda_1$ and $\lambda_2$ were accidentaly swaped in their definition such that the "guidance mechanism" was useless and a fortiori misleading.
+
 \subsection{Empirical findings}
 Empirical evidences tend to show that very few variables are set to non-integral value for each generator.
 %TODO
@@ -36,8 +38,15 @@ Some well known modelization techniques are briefly presented and their pertinen
 they are inspired by canonical cut constraints introduced by~\cite{canonical_cut}.
 \paragraph*{Canonical cut constraint :}
 \begin{proposition}
-    Provided 
+    Let $x^0$ be a vector in $\set{0,1}^n$. The following inequality
+    \begin{equation}
+        \sum_{j\in J_1(x^0)} x_j - \sum_{j \in J_0(x^0)} x_ j \leq n - 1
+    \end{equation}
+    cutts off solution $x^0$ without cutting off any other solution in $\set{0,1}^n$.
 \end{proposition}
+\begin{proof}
+    The proof is based on the $||.||_1$ distance and can be found in~\cite{Hanafi2011}.
+\end{proof}
 \begin{proposition}
     
 \end{proposition}
