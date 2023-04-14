@@ -1,20 +1,22 @@
 \contentsline {section}{\numberline {1}Abstract}{2}{section.1}%
 \contentsline {section}{\numberline {2}Introduction}{3}{section.2}%
 \contentsline {section}{\numberline {3}Definitions and Notations}{4}{section.3}%
-\contentsline {section}{\numberline {4}Backgrounds}{7}{section.4}%
+\contentsline {section}{\numberline {4}Backgrounds}{4}{section.4}%
 \contentsline {section}{\numberline {5}Soft constraint on cones}{7}{section.5}%
 \contentsline {section}{\numberline {6}Improving generators}{7}{section.6}%
 \contentsline {subsection}{\numberline {6.1}Bugs in Gravity Machine}{7}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Empirical findings}{8}{subsection.6.2}%
+\contentsline {subsubsection}{\numberline {6.1.1}Generators not feasible}{7}{subsubsection.6.1.1}%
+\contentsline {subsubsection}{\numberline {6.1.2}Soft conic constraints $\lambda _1$ and $\lambda _2$}{7}{subsubsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.2}Empirical findings}{7}{subsection.6.2}%
 \contentsline {subsection}{\numberline {6.3}Setting some variables binary}{8}{subsection.6.3}%
 \contentsline {subsubsection}{\numberline {6.3.1}Communicating vessels effect}{8}{subsubsection.6.3.1}%
 \contentsline {subsubsection}{\numberline {6.3.2}Same generators lead to the same solution}{8}{subsubsection.6.3.2}%
-\contentsline {paragraph}{Cones}{8}{AlgoLine.2.5}%
+\contentsline {paragraph}{Cones}{9}{AlgoLine.2.5}%
 \contentsline {subsubsection}{\numberline {6.3.3}Too much binary variables increase the solving time}{9}{subsubsection.6.3.3}%
 \contentsline {section}{\numberline {7}Improving projection}{9}{section.7}%
 \contentsline {section}{\numberline {8}Numerical experiments}{9}{section.8}%
 \contentsline {subsection}{\numberline {8.1}Numerical instances}{9}{subsection.8.1}%
 \contentsline {subsection}{\numberline {8.2}Quality measure}{9}{subsection.8.2}%
 \contentsline {subsection}{\numberline {8.3}Numerical results}{9}{subsection.8.3}%
-\contentsline {subsubsection}{\numberline {8.3.1}}{9}{subsubsection.8.3.1}%
-\contentsline {section}{\numberline {9}Conclusion and discussion}{9}{section.9}%
+\contentsline {subsubsection}{\numberline {8.3.1}}{10}{subsubsection.8.3.1}%
+\contentsline {section}{\numberline {9}Conclusion and discussion}{10}{section.9}%

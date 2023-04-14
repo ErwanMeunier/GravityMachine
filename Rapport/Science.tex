@@ -3,7 +3,7 @@ Generators are obtained by using the $\epsilon$-constraints method which is one 
 
 \subsection{Bugs in Gravity Machine}
 
-\subsubsection*{Generators not feasible}
+\subsubsection{Generators not feasible}
 The previous version of Gravity Machine did use the GLPK solver to generate the lower bound set by the $\epsilon$-constraints method. 
 However, closer to the line passing through the Nadir and the origin the more constrained the MILP representing the current generator. 
 Since considered problems have lot of constraints and variables some numerical issues may arise \cite{gurobiNumIssues}. Infeasibility hence
@@ -16,7 +16,7 @@ Tolerance attribute was hand-tuned to allow the solver to find a feasible soluti
 It is worth noticing that no difference in the performance has been observed. The robustness is the matter here.
 In addition, GLPK was replaced by HiGHS~\cite{highs}. Indeed, the latter shows better performances than GLPK~\cite{bench_solver} and is still open-source.
 
-\subsubsection*{Soft conic constraints $\lambda_1$ and $\lambda_2$}
+\subsubsection{Soft conic constraints $\lambda_1$ and $\lambda_2$}
 Both vectors $\lambda_1$ and $\lambda_2$ were accidentaly swaped in their definition such that the "guidance mechanism" was useless and a fortiori misleading.
 
 \subsection{Empirical findings}
@@ -35,21 +35,37 @@ As far as our experimental results show us, this situation is very rare. \noteEr
 Ideally, one would that each generator $\bar{y}^k$ converges to a different $\Tilde{y}^{k,t}$ for some iterations $t\in \mathbb{N}$.
 Below, we consider $J_0(x)$ (and $J_1(x)$) the set containing the index of variables set to zero (respectively to one) into the solution $x$.
 Some well known modelization techniques are briefly presented and their pertinence for GM is studied. For the major part of them, 
-they are inspired by canonical cut constraints introduced by~\cite{canonical_cut}.
+they are inspired by canonical cut constraints introduced by~\cite{canonical_cut} and used for the same purpose by~\cite{Hanafi2011}.
+
 \paragraph*{Canonical cut constraint :}
-\begin{proposition}
+\begin{proposition}\label{bincutconstraintexact}
     Let $x^0$ be a vector in $\set{0,1}^n$. The following inequality
     \begin{equation}
-        \sum_{j\in J_1(x^0)} x_j - \sum_{j \in J_0(x^0)} x_ j \leq n - 1
+        \sum_{j\in J_1(x^0)} x_j + \sum_{j \in J_1(x^0)} 1-x_ j \geq 1
     \end{equation}
     cutts off solution $x^0$ without cutting off any other solution in $\set{0,1}^n$.
 \end{proposition}
 \begin{proof}
-    The proof is based on the $||.||_1$ distance and can be found in~\cite{Hanafi2011}.
+Let's suppose that $x^0$ is not cutted off by the constraint. Then $x = x^0$ implies $0\geq 1$ from (1). The cutting off is proved.
+\\Finally, a solution $x^1 \neq_1 x^0$ is assumed to be cutted off by the constraint. That is to say
+\begin{align}
+    & \sum_{j\in J_1(x^0)} x_j^1 + \sum_{j \in J_1(x^0)} 1-x_ j^1 = 0 \\
+    \Longleftrightarrow &   \| x^0 - x^1 \| = 0
+\end{align}
+In other words $x^0 = x^1$ and $x^0 \neq x^1$ which is impossible. Then,~\ref{bincutconstraintexact} holds.
 \end{proof}
 \begin{proposition}
-    
+    Gravity Machine does not longer guarantee the rectitude of $L$ if $x^0\in \left\lbrack 0,1 \right\rbrack ^n$
 \end{proposition}
+\begin{proof}
+    We exhibit a counter-example. Let be a $1$-01LP of the form:
+    \begin{align}
+        
+    \end{align} 
+\end{proof}
+\begin{corollary}
+    
+\end{corollary}
 
 Provided a feasible solution $s$ (known to be binary), the following constraint allows the solving process to avoid returning $s$ \textbf{only} as a solution \cite{canonical_cut}:
 \[
