@@ -5,18 +5,19 @@
 Generators are obtained by using the $\epsilon$-constraints method which is one of the well-known scalarization techniques \cite{Chankong1983MultiobjectiveDM} aimed at getting a sample of efficient solutions of a MOLP. Those generators form an efficient set for the relaxed problem. That is to say, the set of all generators is also the lower bound set $L$. Since GM starts the search based on each $k$-th generator, one would like to have a better initial solution in order to reach a feasible solution faster.
 
 \subsection{Bugs in Gravity Machine}
+
 \subsubsection*{Generators not feasible}
 The previous version of Gravity Machine did use the GLPK solver to generate the lower bound set by the $\epsilon$-constraints method. 
 However, closer to the line passing through the Nadir and the origin the more constrained the MILP representing the current generator. 
 Since considered problems have lot of constraints and variables some numerical issues may arise \cite{gurobiNumIssues}. Infeasibility hence
 may appear during the solving process for problems which has at least one (feasible) optimal solution. In addition, the \textit{Julia} wrapper
 for GLPK seems to be known for returning the solution minimizing constraints violation\footnote{\url{https://discourse.julialang.org/t/access-infeasible-optimization-results-glpk-with-semicontinuous-variable/59972}}.
-Finally, as the termination status was not correctly handled, some generators turn out to be used whereas there were not "trully" feasible.  
+Finally, as the termination status was not correctly handled, some generators turn out to be used whereas there were not "trully" feasible.
 \paragraph*{Patch:}
 The termination status is now considered and GM properly fails if a generator is not feasible. 
 Tolerance attribute was hand-tuned to allow the solver to find a feasible solution. \noteErwan{ça serait bien que ce ne soit pas "hand-tuned" \url{}https://discourse.julialang.org/t/scalling-both-primal-and-dual-feasibility-tolerance-according-to-the-size-of-the-problem/97455}.
-In addition, GLPK was replaced by HiGHS\cite{highs}. The latter shows better performances \cite{bench_solver} than GLPK and is still open-source.
-
+It is worth noticing that no difference in the performance has been observed. The robustness is the matter here.
+In addition, GLPK was replaced by HiGHS~\cite{highs}. Indeed, the latter shows better performances than GLPK~\cite{bench_solver} and is still open-source.
 \subsubsection*{Soft conic constraints $\lambda_1$ and $\lambda_2$}
 
 
