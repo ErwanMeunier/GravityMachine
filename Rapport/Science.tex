@@ -5,7 +5,21 @@
 Generators are obtained by using the $\epsilon$-constraints method which is one of the well-known scalarization techniques \cite{Chankong1983MultiobjectiveDM} aimed at getting a sample of efficient solutions of a MOLP. Those generators form an efficient set for the relaxed problem. That is to say, the set of all generators is also the lower bound set $L$. Since GM starts the search based on each $k$-th generator, one would like to have a better initial solution in order to reach a feasible solution faster.
 
 \subsection{Bug in Gravity Machine}
-The previous version of Gravity Machine used the GLPK solver to generate the lower bound set by the $\epsilon$-constraints method. However, the models used for the generators "close to the center" are more constrained than the other ones. Since, considered problem have lot of constraints and variables some numerical issues may arise \cite{gurobiNumIssues}.
+The previous version of Gravity Machine did use the GLPK solver to generate the lower bound set by the $\epsilon$-constraints method. 
+However, closer to the line passing through the Nadir and the origin the more constrained the MILP representing the current generator. 
+Since considered problems have lot of constraints and variables some numerical issues may arise \cite{gurobiNumIssues}. Infeasibility hence
+may appear during the solving process for problems which has at least one (feasible) optimal solution. In addition, the \textit{Julia} wrapper
+for GLPK seems to be known for returning the solution minimizing constraints violation\footnote{\url{https://discourse.julialang.org/t/access-infeasible-optimization-results-glpk-with-semicontinuous-variable/59972}}.
+Finally, as the termination status was not correctly handled, some generators turn out to be used whereas there were not "trully" feasible.  
+
+
+a primal feasibility
+tolerance attribute was hand-tuned to allow the solver to find a feasible solution.
+\cite{bench_solver}
+
+
+
+\noteErwan{Stressing this point in the discussion}
 \subsection{Empirical findings}
 Empirical evidences tend to show that very few variables are set to non-integral value for each generator.
 %TODO
@@ -14,7 +28,8 @@ Empirical evidences tend to show that very few variables are set to non-integral
 At first sight, non-solved to integrality variables should be set binary and the problem re-optimized. The latter allows GM to find initial solution Then, a generator closer to $Y$ should result from a the re-optimization process. However, several issues arises:
 
 \subsubsection{Communicating vessels effect}
-As not all constraints are set binary, some variables found to be zero or one might become fractional. A number of variables found fractional after the second stage solving greater than the number of variables found fractional after the first stage solving represents the worst case. 
+As not all constraints are set binary, some variables found to be zero or one might become fractional. 
+A number of variables found fractional after the second stage solving greater than the number of variables found fractional after the first stage solving represents the worst case. 
 As far as our experimental data shows us, this situation is very rare.
 %TODO
 \subsubsection{Same generators lead to the same solution}

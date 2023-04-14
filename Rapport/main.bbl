@@ -1,12 +1,5 @@
 \begin{thebibliography}{}
 
-\bibitem[gur, ]{gurobiNumIssues}
-{G}urobi {G}uidelines for {N}umerical {I}ssues - {G}urobi {O}ptimization ---
-  gurobi.com.
-\newblock
-  \url{https://www.gurobi.com/documentation/9.0/refman/num_grb_guidelines_for_num.html}.
-\newblock [Accessed 06-Apr-2023].
-
 \bibitem[Balas and Jeroslow, 1972]{canonical_cut}
 Balas, E. and Jeroslow, R. (1972).
 \newblock Canonical cuts on the unit hypercube.
@@ -39,5 +32,19 @@ Gandibleux, X., Gasnier, G., and Hanafi, S. (2021).
 \newblock A primal heuristic to compute an upper bound set for multi-objective
   0-1 linear optimisation problems.
 \newblock Online. Springer.
+
+\bibitem[{Gurobi Optimization, LLC}, 2023]{gurobiNumIssues}
+{Gurobi Optimization, LLC} (2023).
+\newblock {G}urobi {G}uidelines for {N}umerical {I}ssues - {G}urobi
+  {O}ptimization gurobi optimizer reference manual.
+\newblock
+  \url{https://www.gurobi.com/documentation/9.0/refman/num_grb_guidelines_for_num.html}.
+\newblock [Accessed 06-Apr-2023].
+
+\bibitem[Mittelman, 2023]{bench_solver}
+Mittelman, H. (2023).
+\newblock Benchmarks for optimization software - milp benchmark.
+\newblock \url{http://plato.asu.edu/ftp/milp.html}.
+\newblock [Accessed 14-Apr-2023].
 
 \end{thebibliography}

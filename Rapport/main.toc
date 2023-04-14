@@ -8,12 +8,12 @@
 \contentsline {subsection}{\numberline {6.2}Empirical findings}{7}{subsection.6.2}%
 \contentsline {subsection}{\numberline {6.3}Setting some variables binary}{7}{subsection.6.3}%
 \contentsline {subsubsection}{\numberline {6.3.1}Communicating vessels effect}{7}{subsubsection.6.3.1}%
-\contentsline {subsubsection}{\numberline {6.3.2}Same generators lead to the same solution}{7}{subsubsection.6.3.2}%
-\contentsline {paragraph}{Canonical cut constraint}{7}{section*.2}%
+\contentsline {subsubsection}{\numberline {6.3.2}Same generators lead to the same solution}{8}{subsubsection.6.3.2}%
+\contentsline {paragraph}{Canonical cut constraint}{8}{section*.2}%
 \contentsline {paragraph}{Cones}{8}{AlgoLine.2.20}%
 \contentsline {subsubsection}{\numberline {6.3.3}Too much binary variables increase the solving time}{8}{subsubsection.6.3.3}%
-\contentsline {section}{\numberline {7}Improving projection}{8}{section.7}%
-\contentsline {section}{\numberline {8}Numerical experiments}{8}{section.8}%
+\contentsline {section}{\numberline {7}Improving projection}{9}{section.7}%
+\contentsline {section}{\numberline {8}Numerical experiments}{9}{section.8}%
 \contentsline {subsection}{\numberline {8.1}Numerical instances}{9}{subsection.8.1}%
 \contentsline {subsection}{\numberline {8.2}Quality measure}{9}{subsection.8.2}%
 \contentsline {subsection}{\numberline {8.3}Numerical results}{9}{subsection.8.3}%
