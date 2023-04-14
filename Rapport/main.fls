@@ -1415,6 +1415,7 @@ INPUT Science.tex
 INPUT ./Science.tex
 INPUT ./Science.tex
 INPUT Science.tex
+INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmtt8.tfm
 INPUT ./code.tex
 INPUT ./code.tex
 INPUT ./code.tex

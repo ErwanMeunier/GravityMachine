@@ -41,6 +41,11 @@ Gandibleux, X., Gasnier, G., and Hanafi, S. (2021).
   \url{https://www.gurobi.com/documentation/9.0/refman/num_grb_guidelines_for_num.html}.
 \newblock [Accessed 06-Apr-2023].
 
+\bibitem[Huangfu and Hall, 2018]{highs}
+Huangfu, Q. and Hall, J. A.~J. (2018).
+\newblock Parallelizing the dual revised simplex method.
+\newblock {\em Mathematical Programming Computation}, 10(1):119--142.
+
 \bibitem[Mittelman, 2023]{bench_solver}
 Mittelman, H. (2023).
 \newblock Benchmarks for optimization software - milp benchmark.

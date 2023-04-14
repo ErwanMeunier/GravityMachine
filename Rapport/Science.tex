@@ -13,10 +13,11 @@ may appear during the solving process for problems which has at least one (feasi
 for GLPK seems to be known for returning the solution minimizing constraints violation\footnote{\url{https://discourse.julialang.org/t/access-infeasible-optimization-results-glpk-with-semicontinuous-variable/59972}}.
 Finally, as the termination status was not correctly handled, some generators turn out to be used whereas there were not "trully" feasible.  
 \paragraph*{Patch:}
-The termination status is now considered and GM properly fails if the a generator is not feasible. 
-Tolerance attribute was hand-tuned to allow the solver to find a feasible solution.
-\cite{bench_solver}
-\subsubsection*{title}
+The termination status is now considered and GM properly fails if a generator is not feasible. 
+Tolerance attribute was hand-tuned to allow the solver to find a feasible solution. \noteErwan{ça serait bien que ce ne soit pas "hand-tuned" \url{}https://discourse.julialang.org/t/scalling-both-primal-and-dual-feasibility-tolerance-according-to-the-size-of-the-problem/97455}.
+In addition, GLPK was replaced by HiGHS\cite{highs}. The latter shows better performances \cite{bench_solver} than GLPK and is still open-source.
+
+\subsubsection*{Soft conic constraints $\lambda_1$ and $\lambda_2$}
 
 
 
@@ -35,7 +36,7 @@ As far as our experimental data shows us, this situation is very rare.
 %TODO
 \subsubsection{Same generators lead to the same solution}
 \paragraph{Canonical cut constraint :}
-Provided a feasible solution $s$ known to be binary, the following constraint allows the solving process to avoid returning $s$ as a solution \cite{canonical_cut}:
+Provided a feasible solution $s$ (known to be binary), the following constraint allows the solving process to avoid returning $s$ as a solution \cite{canonical_cut}:
 \[
 \sum_{j \in \set{i \mid s_i = 0}}x_j +  \sum_{j \in \set{i \mid s_i = 1}}1-x_j \geq 1
 \]
