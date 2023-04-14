@@ -4,18 +4,19 @@
 \section{Improving generators}
 Generators are obtained by using the $\epsilon$-constraints method which is one of the well-known scalarization techniques \cite{Chankong1983MultiobjectiveDM} aimed at getting a sample of efficient solutions of a MOLP. Those generators form an efficient set for the relaxed problem. That is to say, the set of all generators is also the lower bound set $L$. Since GM starts the search based on each $k$-th generator, one would like to have a better initial solution in order to reach a feasible solution faster.
 
-\subsection{Bug in Gravity Machine}
+\subsection{Bugs in Gravity Machine}
+\subsubsection*{Generators not feasible}
 The previous version of Gravity Machine did use the GLPK solver to generate the lower bound set by the $\epsilon$-constraints method. 
 However, closer to the line passing through the Nadir and the origin the more constrained the MILP representing the current generator. 
 Since considered problems have lot of constraints and variables some numerical issues may arise \cite{gurobiNumIssues}. Infeasibility hence
 may appear during the solving process for problems which has at least one (feasible) optimal solution. In addition, the \textit{Julia} wrapper
 for GLPK seems to be known for returning the solution minimizing constraints violation\footnote{\url{https://discourse.julialang.org/t/access-infeasible-optimization-results-glpk-with-semicontinuous-variable/59972}}.
 Finally, as the termination status was not correctly handled, some generators turn out to be used whereas there were not "trully" feasible.  
-
-
-a primal feasibility
-tolerance attribute was hand-tuned to allow the solver to find a feasible solution.
+\paragraph*{Patch:}
+The termination status is now considered and GM properly fails if the a generator is not feasible. 
+Tolerance attribute was hand-tuned to allow the solver to find a feasible solution.
 \cite{bench_solver}
+\subsubsection*{title}
 
 
 
@@ -28,12 +29,12 @@ Empirical evidences tend to show that very few variables are set to non-integral
 At first sight, non-solved to integrality variables should be set binary and the problem re-optimized. The latter allows GM to find initial solution Then, a generator closer to $Y$ should result from a the re-optimization process. However, several issues arises:
 
 \subsubsection{Communicating vessels effect}
-As not all constraints are set binary, some variables found to be zero or one might become fractional. 
+Since not all constraints are set binary, some variables found to be zero or one might become fractional. 
 A number of variables found fractional after the second stage solving greater than the number of variables found fractional after the first stage solving represents the worst case. 
 As far as our experimental data shows us, this situation is very rare.
 %TODO
 \subsubsection{Same generators lead to the same solution}
-\paragraph{Canonical cut constraint}
+\paragraph{Canonical cut constraint :}
 Provided a feasible solution $s$ known to be binary, the following constraint allows the solving process to avoid returning $s$ as a solution \cite{canonical_cut}:
 \[
 \sum_{j \in \set{i \mid s_i = 0}}x_j +  \sum_{j \in \set{i \mid s_i = 1}}1-x_j \geq 1
@@ -48,22 +49,8 @@ Provided a feasible solution $s$ known to be binary, the following constraint al
 \Begin{
  $L,F \gets \textsc{ComputeGenerators}(\mathcal{D},n_L)$\;
  \ForAll(//each $k$-th unfeasible gen){$z(\bar{x}^k)\in L,\Bar{x}^k\notin F$}{
-  timeStart $\gets \textsc{Time}()$; trial $\gets 0$\;
-  timeout $\gets$ false; feasible $\gets$ false\;
-  $\Tilde{x},H,cycle \gets \textsc{RoundingSolution}(\bar{x}^k,H)$\;
-  \While{$\neg feasible \land \neg timeout$}{
-   trial $\gets$ trial $+1$\;
-   $\Bar{x},F$,feasible $\gets \textsc{ProjectSolution}(\Tilde{x})$\;
-   \If{$\neg feasible$}{
-        $\Tilde{x},H,cycle \gets \textsc{RoundingSolution}(\Bar{x},k,h)$\;
-        \If{cycle}{
-            $\Tilde{x}\gets\textsc{PerturbSolution}(\Tilde{x})$\;
-        }
-    }
-    timeout $\gets$ (time()-timeStart $\geq$ maxTime) $\lor$ (trial=maxTrial)\;
-   }
+  
  }
- $U \gets \textsc{ExtractNonDominatedPoint}(F)$\;
  }
 \end{algorithm}
 \subsubsection{Too much binary variables increase the solving time}
