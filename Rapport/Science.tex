@@ -20,9 +20,6 @@ It is worth noticing that no difference in the performance has been observed. Th
 In addition, GLPK was replaced by HiGHS~\cite{highs}. Indeed, the latter shows better performances than GLPK~\cite{bench_solver} and is still open-source.
 \subsubsection*{Soft conic constraints $\lambda_1$ and $\lambda_2$}
 
-
-
-\noteErwan{Stressing this point in the discussion}
 \subsection{Empirical findings}
 Empirical evidences tend to show that very few variables are set to non-integral value for each generator.
 %TODO
@@ -36,11 +33,21 @@ A number of variables found fractional after the second stage solving greater th
 As far as our experimental data shows us, this situation is very rare.
 %TODO
 \subsubsection{Same generators lead to the same solution}
-\paragraph{Canonical cut constraint :}
-Provided a feasible solution $s$ (known to be binary), the following constraint allows the solving process to avoid returning $s$ as a solution \cite{canonical_cut}:
+Ideally, one would that each generator converge to a the set 
+Let be $J_0(x)$ (and $J_1(x)$) the set containing the index of variables set to zero (respectively to one) into the solution $x$. S
+\paragraph*{Canonical cut constraint :}
+\begin{proposition}
+    Provided 
+\end{proposition}
+\begin{proposition}
+    
+\end{proposition}
+
+Provided a feasible solution $s$ (known to be binary), the following constraint allows the solving process to avoid returning $s$ \textbf{only} as a solution \cite{canonical_cut}:
 \[
 \sum_{j \in \set{i \mid s_i = 0}}x_j +  \sum_{j \in \set{i \mid s_i = 1}}1-x_j \geq 1
 \]
+It is 
 \textcolor{red}{The lower bound set is no longer guaranteed}
 \paragraph{Cones}
 
