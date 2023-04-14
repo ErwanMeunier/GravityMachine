@@ -1,6 +1,3 @@
-\section{Soft constraint on cones}
-
-
 \section{Improving generators}
 Generators are obtained by using the $\epsilon$-constraints method which is one of the well-known scalarization techniques \cite{Chankong1983MultiobjectiveDM} aimed at getting a sample of efficient solutions of a MOLP. Those generators form an efficient set for the relaxed problem. That is to say, the set of all generators is also the lower bound set $L$. Since GM starts the search based on each $k$-th generator, one would like to have a better initial solution in order to reach a feasible solution faster.
 
@@ -19,7 +16,7 @@ Tolerance attribute was hand-tuned to allow the solver to find a feasible soluti
 It is worth noticing that no difference in the performance has been observed. The robustness is the matter here.
 In addition, GLPK was replaced by HiGHS~\cite{highs}. Indeed, the latter shows better performances than GLPK~\cite{bench_solver} and is still open-source.
 \subsubsection*{Soft conic constraints $\lambda_1$ and $\lambda_2$}
-
+The $\lambda_1$
 \subsection{Empirical findings}
 Empirical evidences tend to show that very few variables are set to non-integral value for each generator.
 %TODO
@@ -30,11 +27,13 @@ At first sight, non-solved to integrality variables should be set binary and the
 \subsubsection{Communicating vessels effect}
 Since not all constraints are set binary, some variables found to be zero or one might become fractional. 
 A number of variables found fractional after the second stage solving greater than the number of variables found fractional after the first stage solving represents the worst case. 
-As far as our experimental data shows us, this situation is very rare.
+As far as our experimental results show us, this situation is very rare. \noteErwan{à reformuler}
 %TODO
 \subsubsection{Same generators lead to the same solution}
-Ideally, one would that each generator converge to a the set 
-Let be $J_0(x)$ (and $J_1(x)$) the set containing the index of variables set to zero (respectively to one) into the solution $x$. S
+Ideally, one would that each generator $\bar{y}^k$ converges to a different $\Tilde{y}^{k,t}$ for some iterations $t\in \mathbb{N}$.
+Below, we consider $J_0(x)$ (and $J_1(x)$) the set containing the index of variables set to zero (respectively to one) into the solution $x$.
+Some well known modelization techniques are briefly presented and their pertinence for GM is studied. For the major part of them, 
+they are inspired by canonical cut constraints introduced by~\cite{canonical_cut}.
 \paragraph*{Canonical cut constraint :}
 \begin{proposition}
     Provided 
