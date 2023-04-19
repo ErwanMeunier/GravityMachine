@@ -1,22 +1,25 @@
 \contentsline {section}{\numberline {1}Abstract}{2}{section.1}%
 \contentsline {section}{\numberline {2}Introduction}{3}{section.2}%
 \contentsline {section}{\numberline {3}Definitions and Notations}{4}{section.3}%
-\contentsline {section}{\numberline {4}Backgrounds}{7}{section.4}%
-\contentsline {section}{\numberline {5}Soft constraint on cones}{7}{section.5}%
-\contentsline {section}{\numberline {6}Improving generators}{7}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Bugs in Gravity Machine}{7}{subsection.6.1}%
-\contentsline {subsubsection}{\numberline {6.1.1}Generators not feasible}{7}{subsubsection.6.1.1}%
-\contentsline {subsubsection}{\numberline {6.1.2}Soft conic constraints $\lambda _1$ and $\lambda _2$}{7}{subsubsection.6.1.2}%
-\contentsline {subsection}{\numberline {6.2}Empirical findings}{8}{subsection.6.2}%
-\contentsline {subsection}{\numberline {6.3}Setting some variables binary}{8}{subsection.6.3}%
-\contentsline {subsubsection}{\numberline {6.3.1}Communicating vessels effect}{8}{subsubsection.6.3.1}%
-\contentsline {subsubsection}{\numberline {6.3.2}Same generators lead to the same solution}{8}{subsubsection.6.3.2}%
-\contentsline {paragraph}{Cones}{10}{AlgoLine.2.5}%
-\contentsline {subsubsection}{\numberline {6.3.3}Too much binary variables increase the solving time}{10}{subsubsection.6.3.3}%
-\contentsline {section}{\numberline {7}Improving projection}{10}{section.7}%
-\contentsline {section}{\numberline {8}Numerical experiments}{10}{section.8}%
-\contentsline {subsection}{\numberline {8.1}Numerical instances}{10}{subsection.8.1}%
-\contentsline {subsection}{\numberline {8.2}Quality measure}{10}{subsection.8.2}%
-\contentsline {subsection}{\numberline {8.3}Numerical results}{10}{subsection.8.3}%
-\contentsline {subsubsection}{\numberline {8.3.1}}{11}{subsubsection.8.3.1}%
-\contentsline {section}{\numberline {9}Conclusion and discussion}{11}{section.9}%
+\contentsline {section}{\numberline {4}Gravity Machine}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Generators}{6}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Projection}{6}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Rounding}{6}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Perturbing}{6}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Improving generators}{6}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Bugs in Gravity Machine}{7}{subsection.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.1}Generators not feasible}{7}{subsubsection.5.1.1}%
+\contentsline {subsubsection}{\numberline {5.1.2}Soft conic constraints $\lambda _1$ and $\lambda _2$}{8}{subsubsection.5.1.2}%
+\contentsline {subsection}{\numberline {5.2}Empirical findings}{8}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Setting some variables binary}{8}{subsection.5.3}%
+\contentsline {subsubsection}{\numberline {5.3.1}Communicating vessels effect}{8}{subsubsection.5.3.1}%
+\contentsline {subsubsection}{\numberline {5.3.2}Same generators lead to the same solution}{8}{subsubsection.5.3.2}%
+\contentsline {paragraph}{Cones}{10}{AlgoLine.3.5}%
+\contentsline {subsubsection}{\numberline {5.3.3}Too much binary variables increase the solving time}{10}{subsubsection.5.3.3}%
+\contentsline {section}{\numberline {6}Improving projection}{10}{section.6}%
+\contentsline {section}{\numberline {7}Numerical experiments}{10}{section.7}%
+\contentsline {subsection}{\numberline {7.1}Numerical instances}{10}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Quality measure}{10}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Numerical results}{10}{subsection.7.3}%
+\contentsline {subsubsection}{\numberline {7.3.1}}{11}{subsubsection.7.3.1}%
+\contentsline {section}{\numberline {8}Conclusion and discussion}{11}{section.8}%

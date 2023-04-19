@@ -5,6 +5,11 @@ Balas, E. and Jeroslow, R. (1972).
 \newblock Canonical cuts on the unit hypercube.
 \newblock {\em SIAM Journal on Applied Mathematics}, 23(1):61--69.
 
+\bibitem[Berthold et~al., 2019]{ten_years_fp}
+Berthold, T., Lodi, A., and Salvagnin, D. (2019).
+\newblock Ten years of feasibility pump, and counting.
+\newblock {\em EURO Journal on Computational Optimization}, 7(1):1--14.
+
 \bibitem[Bezanson et~al., 2017]{Julia-2017}
 Bezanson, J., Edelman, A., Karpinski, S., and Shah, V.~B. (2017).
 \newblock Julia: A fresh approach to numerical computing.
@@ -26,6 +31,11 @@ Ehrgott, M. and Gandibleux, X. (2001).
 \newblock In K{\"o}ksalan, M. and Zionts, S., editors, {\em Multiple Criteria
   Decision Making in the New Millennium}, pages 241--253, Berlin, Heidelberg.
   Springer Berlin Heidelberg.
+
+\bibitem[Fischetti et~al., 2005]{FeasibilityPump}
+Fischetti, M., Glover, F., and Lodi, A. (2005).
+\newblock The feasibility pump.
+\newblock {\em Mathematical Programming}, 104(1):91--104.
 
 \bibitem[Gandibleux et~al., 2021]{gravitymachine}
 Gandibleux, X., Gasnier, G., and Hanafi, S. (2021).

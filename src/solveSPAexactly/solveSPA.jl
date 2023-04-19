@@ -1,4 +1,5 @@
 include("setPartitioning.jl") # parser and other tools 
+include("../GMquality.jl")
 
 import HiGHS
 import MultiObjectiveAlgorithms as MOA
@@ -50,21 +51,31 @@ function solveBiSPA!(c1::Vector{Int}, c2::Vector{Int}, A::Array{Int,2}, nbsoluti
 end
 
 function main()
+    excluded = [16]
     timeLimit = 600.
     nbsolLimit = 6
-    instances::Vector{String} = readdir(instancesPath)[15:end]
+    instances::Vector{String} = readdir(instancesPath)
     times::Vector{Float64} = fill(-1., length(instances)) # none benchmarked instance are clearly discriminated
-    
+    qualities::Vector{Float64} = fill(0., length(instances))
+    cardResults::Vector{Int64} = fill(0., length(instances))
     for i in eachindex(instances)
-        # would be better to put a try catch end around here
         file = instances[i]
-        println("Instance: ", instances[i])
-        c1, c2, A = loadInstance2SPA(instancesPath*file)
-        solvedModel = solveBiSPA!(c1,c2,A,nbsolLimit,timeLimit)
-        times[i] = termination_status(solvedModel) == MOI.OPTIMAL ? begin println("--> exported") ; solve_time(solvedModel) end : -1 
-        println(times[i])
-        println("- - - - - - - - ")
+        if !(parse(Int, file[end-5:end-4]) in excluded) 
+            # would be better to put a try catch end around here
+            println("Instance: ", instances[i])
+            c1, c2, A = loadInstance2SPA(instancesPath*file)
+            solvedModel = solveBiSPA!(c1,c2,A,nbsolLimit,timeLimit)
+            times[i] = termination_status(solvedModel) == MOI.OPTIMAL ? begin println("--> exported") ; solve_time(solvedModel) end : -1 
+            EBP = [Int.(round.(objective_value(solvedModel; result = i))) for i in 1:result_count(solvedModel)]
+            XN,YN = loadNDPoints2SPA(file[4:end]) # getting the whole set of supported solutions
+            qualities[i] = 100*qualityMeasure(XN,YN,[sol[1] for sol in EBP],[sol[2] for sol in EBP]) # XN YN XEBP YEBP
+            cardResults[i] = result_count(solvedModel)
+            println(times[i])
+            println("- - - - - - - - ")
+        else
+            println("WARNING: ", instances[i], " is excluded")
+        end
     end
-    output = DataFrame([instances,times],[:Instances,:Times])
+    output = DataFrame([instances,times,qualities,cardResults],[:Instances,:Times,:Quality,:Nb_results])
     CSV.write("../results/timeExactSolving.csv", output)
 end

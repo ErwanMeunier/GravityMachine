@@ -37,6 +37,51 @@ function loadInstance2SPA(fname::String)
     return c1, c2, A
 end
 
+function loadInstance2SPA(fname::String)
+
+    f = open("../../SPA/instances/"*fname)
+    nbctr, nbvar = parse.(Int, split(readline(f))) # nombre de contraintes , nombre de variables
+    A = zeros(Int, nbctr, nbvar)                   # matrice des contraintes
+    c1 = zeros(Int, nbvar)                         # vecteur des couts
+    c2 = zeros(Int, nbvar)                         # deuxième vecteur des couts
+    nb = zeros(Int, nbvar)
+    for i in 1:nbvar
+        flag = 1
+        for valeur in split(readline(f))
+            if flag == 1
+                c1[i] = parse(Int, valeur)
+                flag +=1
+            elseif flag == 2
+                c2[i] = parse(Int, valeur)
+                flag +=1
+            elseif flag == 3
+                nb[i] = parse(Int, valeur)
+                flag +=1
+            else
+                j = parse(Int, valeur)
+                A[j,i] = 1
+            end
+        end
+    end
+    close(f)
+    return c1, c2, A
+end
+
+function loadNDPoints2SPA(fname::String)
+    fname = "../../SPA/Y/Y_N_"*fname
+    f = open(fname)
+    temps = parse.(Float64, readline(f))
+    len = parse.(Int, readline(f))
+    xN = Vector{Int64}(undef, len)
+    yN = Vector{Int64}(undef, len)
+    for i in 1:len
+        x, y =  parse.(Float64, split(readline(f)))
+        xN[i],yN[i] = round(Int,x),round(Int,y)
+    end
+    close(f)
+    return xN, yN
+end
+
 #=
 # ---- Compute the set of non-dominated points Y_N of a 2SPA with vOptGeneric
 function computeYNfor2SPA(  nbvar::Int,
