@@ -93,7 +93,8 @@ In other words $x^0 = x^1$ and $x^0 \neq x^1$ which is impossible. Then,~\ref{bi
         }
         \draw[thick,->] (0,0)--(1.05,0) node[anchor=north west] {$x_1$};
         \draw[thick,->] (0,0)--(0,1.05) node[anchor=south east] {$x_2$};
-        \draw[->,thick,violet] (0,0)--(0.35,0.35);
+        \draw[->,violet,line width=2pt] (0,0)--(0.35,0.35);
+        \draw[orange, dashed,thick] (0.1,-0.1)--(-0.1,0.1);
         \foreach \x/\y in {0/0, 1/0}{
             \filldraw[black] (\x,\y) circle (0.35pt);
         }
@@ -101,7 +102,7 @@ In other words $x^0 = x^1$ and $x^0 \neq x^1$ which is impossible. Then,~\ref{bi
             \filldraw[teal] (\x,\y) circle (0.35pt);
         }
         \filldraw[blue] (0,0.25) circle (0.35pt);
-        \node[right,blue] at (0.01,0.25) {$x^0$};
+        \node[above right,blue] at (0.01,0.25) {\large \textbf{$x^0$}};
     \end{tikzpicture}
     \caption{}
 \end{figure}

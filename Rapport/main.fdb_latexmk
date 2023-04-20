@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex main"] 1682008480 "main.aux" "main.bbl" "main" 1682008754
+["bibtex main"] 1682009167 "main.aux" "main.bbl" "main" 1682009371
   "/usr/share/texlive/texmf-dist/bibtex/bst/base/apalike.bst" 1292289607 24635 604dafcc79f521a11ea73e506e1fbd98 ""
   "biblio.bib" 1681935400 8069 fa4b0693ae33554e9fa9a486fc638127 ""
-  "main.aux" 1682008754 6124 4cb5b0f3fd533cd3866aad1720ec5c0c "pdflatex"
+  "main.aux" 1682009371 6124 4cb5b0f3fd533cd3866aad1720ec5c0c "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
-["pdflatex"] 1682008750 "/home/erwan/Documents/GIT/GravityMachine/Rapport/main.tex" "main.pdf" "main" 1682008754
+["pdflatex"] 1682009367 "/home/erwan/Documents/GIT/GravityMachine/Rapport/main.tex" "main.pdf" "main" 1682009371
   "/etc/texmf/web2c/texmf.cnf" 1679260494 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/home/erwan/Documents/GIT/GravityMachine/Rapport/main.tex" 1682005010 1956 421b3012b14dc92445622d57a3730c64 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -53,6 +53,7 @@
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb" 1248133631 32001 6aeea3afe875097b1eb0da29acd61e28 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb" 1248133631 30251 6afa5cb1d0204815a708a080681d4674 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb" 1248133631 36299 5f9df58c2139e7edcf37c8fca4bd384d ""
+  "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb" 1248133631 36741 fa121aac0049305630cf160b86157ee4 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb" 1248133631 37912 77d683123f92148345f3fc36a38d9ab1 ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb" 1248133631 36281 c355509802a035cadc5f15869451dcee ""
   "/usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1248133631 35752 024fb6c41858982481f6968b5fc26508 ""
@@ -271,17 +272,17 @@
   "Conclusion.tex" 1681437580 35 46e66b044c2bd0f196f8de4250192e84 ""
   "Gravity Machine.tex" 1681937663 2765 962188e12738a710d8ccf3b0cf544c9f ""
   "Introduction.tex" 1681437580 23 0724ce7a131568ad239c1aac91dfb03b ""
-  "Science.tex" 1682008749 8178 bd9ecd05758d03ffe692b12966e3f080 ""
+  "Science.tex" 1682009367 8269 1cb0db23c1eba8dd3cc37bb636c17a44 ""
   "code.tex" 1681437580 0 d41d8cd98f00b204e9800998ecf8427e ""
   "definitions_notations.tex" 1682002332 7622 6d552d6a13916924d280b39aee008f97 ""
   "experiments-results.tex" 1681982716 573 846d40bad0726c8f0f4edd03534eba7c ""
   "figures_tikz/counterExampleL.png" 1681472473 28011 ba1423bb891264e116dfaf634f60f286 ""
   "logos/Logotype_Nantes-U_noir-300dpi.png" 1681437580 47423 7264834a50146dda666eb3e0cdd37373 ""
-  "main.aux" 1682008754 6124 4cb5b0f3fd533cd3866aad1720ec5c0c "pdflatex"
-  "main.bbl" 1682008480 2806 c14cd9a51423f10d227669fa95350bbe "bibtex main"
-  "main.out" 1682008754 3847 1d5b022b82ace1aaea4a0bdfbfaa9e87 "pdflatex"
+  "main.aux" 1682009371 6124 4cb5b0f3fd533cd3866aad1720ec5c0c "pdflatex"
+  "main.bbl" 1682009167 2806 c14cd9a51423f10d227669fa95350bbe "bibtex main"
+  "main.out" 1682009371 3847 1d5b022b82ace1aaea4a0bdfbfaa9e87 "pdflatex"
   "main.tex" 1682005010 1956 421b3012b14dc92445622d57a3730c64 ""
-  "main.toc" 1682008754 2110 c35137a400c89958ee518d2b4d302d94 "pdflatex"
+  "main.toc" 1682009371 2110 c35137a400c89958ee518d2b4d302d94 "pdflatex"
   "titlepage.tex" 1681437580 2582 d4e62f0f999c8255fef3533770c49544 ""
   (generated)
   "main.aux"
