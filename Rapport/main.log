@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2023.3.26)  20 APR 2023 00:18
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2023.3.26)  20 APR 2023 18:39
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -606,75 +606,84 @@ Package: todonotes 2021/06/04
 File: tikzlibrarypositioning.code.tex 2021/05/15 v3.1.9a (3.1.9a)
 )
 \c@@todonotes@numberoftodonotes=\count324
+) (/usr/share/texlive/texmf-dist/tex/latex/colortbl/colortbl.sty
+Package: colortbl 2020/01/04 v1.0e Color table columns (DPC)
+\everycr=\toks52
+\minrowclearance=\skip82
+) (/usr/share/texlive/texmf-dist/tex/latex/makecell/makecell.sty
+Package: makecell 2009/08/03 V0.1e Managing of Tab Column Heads and Cells
+\rotheadsize=\dimen307
+\c@nlinenum=\count325
+\TeXr@lab=\toks53
 ) (/usr/share/texlive/texmf-dist/tex/latex/pstricks-add/pstricks-add.sty (/usr/share/texlive/texmf-dist/tex/latex/pstricks/pstricks.sty
 Package: pstricks 2021/08/23 v0.71 LaTeX wrapper for `PSTricks' (RN,HV)
  (/usr/share/texlive/texmf-dist/tex/generic/xkeyval/pst-xkey.tex
 File: pst-xkey.tex 2005/11/25 v1.6 PSTricks specialization of xkeyval (HA)
 ) (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks.tex (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pst-fp.tex `pst-fp' v0.06, 2020/11/20 (hv)
-\pstFP@xs=\count325
-\pstFP@xia=\count326
-\pstFP@xib=\count327
-\pstFP@xfa=\count328
-\pstFP@xfb=\count329
-\pstFP@rega=\count330
-\pstFP@regb=\count331
-\pstFP@regs=\count332
-\pstFP@times=\count333
+\pstFP@xs=\count326
+\pstFP@xia=\count327
+\pstFP@xib=\count328
+\pstFP@xfa=\count329
+\pstFP@xfb=\count330
+\pstFP@rega=\count331
+\pstFP@regb=\count332
+\pstFP@regs=\count333
+\pstFP@times=\count334
 )
-\psLoopIndex=\count334
+\psLoopIndex=\count335
 
 `PSTricks' v3.13  <2022/01/09> (tvz,hv)
-\pst@dima=\dimen307
-\pst@dimb=\dimen308
-\pst@dimc=\dimen309
-\pst@dimd=\dimen310
-\pst@dimg=\dimen311
-\pst@dimh=\dimen312
-\pst@dimm=\dimen313
-\pst@dimn=\dimen314
-\pst@dimo=\dimen315
-\pst@dimp=\dimen316
+\pst@dima=\dimen308
+\pst@dimb=\dimen309
+\pst@dimc=\dimen310
+\pst@dimd=\dimen311
+\pst@dimg=\dimen312
+\pst@dimh=\dimen313
+\pst@dimm=\dimen314
+\pst@dimn=\dimen315
+\pst@dimo=\dimen316
+\pst@dimp=\dimen317
 \pst@hbox=\box78
 \pst@ibox=\box79
 \pst@boxg=\box80
-\pst@cnta=\count335
-\pst@cntb=\count336
-\pst@cntc=\count337
-\pst@cntd=\count338
-\pst@cntg=\count339
-\pst@cnth=\count340
-\pst@cntm=\count341
-\pst@cntn=\count342
-\pst@cnto=\count343
-\pst@cntp=\count344
-\@zero=\count345
-\pst@toks=\toks52
+\pst@cnta=\count336
+\pst@cntb=\count337
+\pst@cntc=\count338
+\pst@cntd=\count339
+\pst@cntg=\count340
+\pst@cnth=\count341
+\pst@cntm=\count342
+\pst@cntn=\count343
+\pst@cnto=\count344
+\pst@cntp=\count345
+\@zero=\count346
+\pst@toks=\toks54
 --- We are running latex or xelatex ---
 (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks.con) (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks-color.tex)
-\psunit=\dimen317
-\psxunit=\dimen318
-\psyunit=\dimen319
-\pst@C@@rType=\count346
-\pslinewidth=\dimen320
-\psk@startLW=\dimen321
-\psk@endLW=\dimen322
+\psunit=\dimen318
+\psxunit=\dimen319
+\psyunit=\dimen320
+\pst@C@@rType=\count347
+\pslinewidth=\dimen321
+\psk@startLW=\dimen322
+\psk@endLW=\dimen323
  (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks-arrows.tex
-\pshooklength=\dimen323
-\pshookwidth=\dimen324
+\pshooklength=\dimen324
+\pshookwidth=\dimen325
 )
-\pst@customdefs=\toks53
+\pst@customdefs=\toks55
  (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks-dots.tex)
-\pslinearc=\dimen325
-\pst@symbolStep=\dimen326
-\pst@symbolWidth=\dimen327
-\pst@symbolLinewidth=\dimen328
-\everypsbox=\toks54
-\psframesep=\dimen329
-\pslabelsep=\dimen330
-\sh@wgridXunit=\dimen331
-\sh@wgridYunit=\dimen332
-\pst@shift=\dimen333
-\ps@imagectr=\count347
+\pslinearc=\dimen326
+\pst@symbolStep=\dimen327
+\pst@symbolWidth=\dimen328
+\pst@symbolLinewidth=\dimen329
+\everypsbox=\toks56
+\psframesep=\dimen330
+\pslabelsep=\dimen331
+\sh@wgridXunit=\dimen332
+\sh@wgridYunit=\dimen333
+\pst@shift=\dimen334
+\ps@imagectr=\count348
  (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks.con))
 File: pstricks.tex 2022/01/09 v3.13 `PSTricks' (tvz,hv)
  (/usr/share/texlive/texmf-dist/tex/generic/pstricks/pst-fp.tex `pst-fp' v0.06, 2020/11/20 (hv))
@@ -686,57 +695,57 @@ Package: pst-xkey 2005/11/25 v1.6 package wrapper for pst-xkey.tex (HA)
 ) (/usr/share/texlive/texmf-dist/tex/latex/multido/multido.sty
 Package: multido 2004/05/17 package wrapper for PSTricks `multido.tex', (HV/RN)
  (/usr/share/texlive/texmf-dist/tex/generic/multido/multido.tex  v1.42, 2010/05/14 <tvz>
-\multido@count=\count348
-\multidocount=\count349
-\multido@stuff=\toks55
+\multido@count=\count349
+\multidocount=\count350
+\multido@stuff=\toks57
 )
 File: multido.tex 2010/05/14 v1.42 `multido' (tvz,hv)
 )
 Package: pst-plot 2021/09/23 package wrapper for pst-plot.tex (hv)
  (/usr/share/texlive/texmf-dist/tex/generic/pst-plot/pst-plot.tex (/usr/share/texlive/texmf-dist/tex/generic/pst-tools/pst-tools.tex `PST-tools' v0.12, 2021/09/23 (hv)
-\randomi=\count350
-\ranval=\count351
+\randomi=\count351
+\ranval=\count352
 ) (/usr/share/texlive/texmf-dist/tex/generic/pstricks-add/pstricks-add.tex (/usr/share/texlive/texmf-dist/tex/generic/pst-node/pst-node.tex  v1.43, 2022/01/31
-\psrow=\count352
-\pscol=\count353
-\psmatrixcnt=\count354
-\psrowsep=\skip82
-\pscolsep=\skip83
-\pst@args=\count355
-\num@pts=\count356
-\pst@argcnt=\count357
+\psrow=\count353
+\pscol=\count354
+\psmatrixcnt=\count355
+\psrowsep=\skip83
+\pscolsep=\skip84
+\pst@args=\count356
+\num@pts=\count357
+\pst@argcnt=\count358
 ) (/usr/share/texlive/texmf-dist/tex/generic/pst-arrow/pst-arrow.tex `pst-arrow' v0.05, 2021/11/16 (dr,hv)) (/usr/share/texlive/texmf-dist/tex/generic/pst-3d/pst-3d.tex `PST-3d' v1.11, 2010/02/14 (tvz)) (/usr/share/texlive/texmf-dist/tex/generic/pst-math/pst-math.tex `pst-math' v0.64 , (CJ,hv)) `pstricks-add' v3.92, 2021/12/25 (dr,hv)
-\psparallelogramsep=\dimen334
-\pst@cntC=\count358
-\pst@stepcount=\count359
-\chart@ColorIndex=\dimen335
-\chart@ColorStep=\dimen336
-\pst@chartHeight=\dimen337
-\pst@chartStackDepth=\dimen338
-\pst@chartStackWidth=\dimen339
-\chart@Toggle=\count360
-\psVectorCtr=\count361
+\psparallelogramsep=\dimen335
+\pst@cntC=\count359
+\pst@stepcount=\count360
+\chart@ColorIndex=\dimen336
+\chart@ColorStep=\dimen337
+\pst@chartHeight=\dimen338
+\pst@chartStackDepth=\dimen339
+\pst@chartStackWidth=\dimen340
+\chart@Toggle=\count361
+\psVectorCtr=\count362
 )  v1.93, 2021/09/23 (tvz,hv)
-\pstRadUnit=\dimen340
-\pstRadUnitInv=\dimen341
-\pst@linecnt=\count362
+\pstRadUnit=\dimen341
+\pstRadUnitInv=\dimen342
+\pst@linecnt=\count363
 \RCD@file=\read3
-\psxlabelsep=\dimen342
-\psylabelsep=\dimen343
-\psk@subticksize=\dimen344
-\pst@xticksizeA=\dimen345
-\pst@xticksizeB=\dimen346
-\pst@xticksizeC=\dimen347
-\pst@yticksizeA=\dimen348
-\pst@yticksizeB=\dimen349
-\pst@yticksizeC=\dimen350
-\@digitcounter=\count363
-\psk@llx=\dimen351
-\psk@lly=\dimen352
-\psk@urx=\dimen353
-\psk@ury=\dimen354
-\pst@xunit=\dimen355
-\pst@yunit=\dimen356
+\psxlabelsep=\dimen343
+\psylabelsep=\dimen344
+\psk@subticksize=\dimen345
+\pst@xticksizeA=\dimen346
+\pst@xticksizeB=\dimen347
+\pst@xticksizeC=\dimen348
+\pst@yticksizeA=\dimen349
+\pst@yticksizeB=\dimen350
+\pst@yticksizeC=\dimen351
+\@digitcounter=\count364
+\psk@llx=\dimen352
+\psk@lly=\dimen353
+\psk@urx=\dimen354
+\psk@ury=\dimen355
+\pst@xunit=\dimen356
+\pst@yunit=\dimen357
 )
 File: pst-plot.tex 2021/09/23 1.93 `pst-plot' (tvz,hv)
 ) (/usr/share/texlive/texmf-dist/tex/latex/pst-node/pst-node.sty
@@ -756,54 +765,54 @@ Package: pst-calculate 2019/01/24 v. 0.02(Herbert Voss) Support for caculations 
 Package: expl3 2022-01-21 L3 programming layer (loader) 
  (/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2022-01-12 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count364
+\l__color_backend_stack_int=\count365
 \l__pdf_internal_box=\box81
 ))
 Package: xparse 2022-01-12 L3 Experimental document command parser
 ) (/usr/share/texlive/texmf-dist/tex/latex/siunitx/siunitx.sty
 Package: siunitx 2022-02-02 v3.0.46 A comprehensive (SI) units package
-\l__siunitx_angle_tmp_dim=\dimen357
+\l__siunitx_angle_tmp_dim=\dimen358
 \l__siunitx_angle_marker_box=\box82
 \l__siunitx_angle_unit_box=\box83
-\l__siunitx_compound_count_int=\count365
+\l__siunitx_compound_count_int=\count366
  (/usr/share/texlive/texmf-dist/tex/latex/translations/translations.sty
 Package: translations 2022/01/04 v1.11 internationalization of LaTeX2e packages (CN)
  (/usr/share/texlive/texmf-dist/tex/latex/etoolbox/etoolbox.sty
 Package: etoolbox 2020/10/05 v2.5k e-TeX tools for LaTeX (JAW)
-\etb@tempcnta=\count366
+\etb@tempcnta=\count367
 ))
-\l__siunitx_number_exponent_fixed_int=\count367
-\l__siunitx_number_min_decimal_int=\count368
-\l__siunitx_number_min_integer_int=\count369
-\l__siunitx_number_round_precision_int=\count370
-\l__siunitx_number_group_minimum_int=\count371
+\l__siunitx_number_exponent_fixed_int=\count368
+\l__siunitx_number_min_decimal_int=\count369
+\l__siunitx_number_min_integer_int=\count370
+\l__siunitx_number_round_precision_int=\count371
+\l__siunitx_number_group_minimum_int=\count372
 \l__siunitx_table_tmp_box=\box84
-\l__siunitx_table_tmp_dim=\dimen358
-\l__siunitx_table_column_width_dim=\dimen359
+\l__siunitx_table_tmp_dim=\dimen359
+\l__siunitx_table_column_width_dim=\dimen360
 \l__siunitx_table_integer_box=\box85
 \l__siunitx_table_decimal_box=\box86
 \l__siunitx_table_before_box=\box87
 \l__siunitx_table_after_box=\box88
-\l__siunitx_table_before_dim=\dimen360
-\l__siunitx_table_carry_dim=\dimen361
-\l__siunitx_unit_tmp_int=\count372
-\l__siunitx_unit_position_int=\count373
-\l__siunitx_unit_total_int=\count374
+\l__siunitx_table_before_dim=\dimen361
+\l__siunitx_table_carry_dim=\dimen362
+\l__siunitx_unit_tmp_int=\count373
+\l__siunitx_unit_position_int=\count374
+\l__siunitx_unit_total_int=\count375
  (/usr/share/texlive/texmf-dist/tex/latex/l3packages/l3keys2e/l3keys2e.sty
 Package: l3keys2e 2022-01-12 LaTeX2e option processing using LaTeX3 keys
 ))) (/usr/share/texlive/texmf-dist/tex/generic/iftex/ifluatex.sty
 Package: ifluatex 2019/10/25 v1.5 ifluatex legacy package. Use iftex instead.
 ) (/usr/share/texlive/texmf-dist/tex/generic/xstring/xstring.sty (/usr/share/texlive/texmf-dist/tex/generic/xstring/xstring.tex
-\integerpart=\count375
-\decimalpart=\count376
+\integerpart=\count376
+\decimalpart=\count377
 )
 Package: xstring 2021/07/21 v1.84 String manipulations (CT)
 ) (/usr/share/texlive/texmf-dist/tex/generic/pst-math/pst-math.tex)
 File: pst-math.tex 2021/09/23 v1.93 `PST-math' (hv)
-\c@Rand@No=\count377
-\c@Random@Left=\count378
-\c@Random@Right=\count379
-\c@Random@No@max=\count380
+\c@Rand@No=\count378
+\c@Random@Left=\count379
+\c@Random@Right=\count380
+\c@Random@No@max=\count381
 )
 Package: pstricks-add 2021/09/10 v. 0.17 package wrapper for pstricks-add.tex (hv)
  (/usr/share/texlive/texmf-dist/tex/generic/pstricks-add/pstricks-add.tex)
@@ -812,39 +821,43 @@ File: pstricks-add.tex 2021/09/23 v1.93 `PSTricks-add' (hv)
 File: tikzlibraryarrows.code.tex 2021/05/15 v3.1.9a (3.1.9a)
  (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryarrows.code.tex
 File: pgflibraryarrows.code.tex 2021/05/15 v3.1.9a (3.1.9a)
-\arrowsize=\dimen362
+\arrowsize=\dimen363
 )) (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikzlibraryplotmarks.code.tex
 File: tikzlibraryplotmarks.code.tex 2021/05/15 v3.1.9a (3.1.9a)
  (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.code.tex
 File: pgflibraryplotmarks.code.tex 2021/05/15 v3.1.9a (3.1.9a)
-))
-\c@definition=\count381
-\c@theorem=\count382
-\c@corollary=\count383
-\c@proposition=\count384
-\c@lemma=\count385
-Package translations Info: No language package found. I am going to use `english' as default language. on input line 55.
+)) (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikzlibrarypatterns.code.tex
+File: tikzlibrarypatterns.code.tex 2021/05/15 v3.1.9a (3.1.9a)
+ (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibrarypatterns.code.tex
+File: pgflibrarypatterns.code.tex 2021/05/15 v3.1.9a (3.1.9a)
+)) (/usr/share/texlive/texmf-dist/tex/generic/pgf/frontendlayer/tikz/libraries/tikzlibrarypatterns.meta.code.tex (/usr/share/texlive/texmf-dist/tex/generic/pgf/libraries/pgflibrarypatterns.meta.code.tex))
+\c@definition=\count382
+\c@theorem=\count383
+\c@corollary=\count384
+\c@proposition=\count385
+\c@lemma=\count386
+Package translations Info: No language package found. I am going to use `english' as default language. on input line 56.
  (./main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 55.
-LaTeX Font Info:    ... okay on input line 55.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 56.
+LaTeX Font Info:    ... okay on input line 56.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -882,24 +895,24 @@ LaTeX Font Info:    ... okay on input line 55.
 
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count386
-\scratchdimen=\dimen363
+\scratchcounter=\count387
+\scratchdimen=\dimen364
 \scratchbox=\box89
-\nofMPsegments=\count387
-\nofMParguments=\count388
-\everyMPshowfont=\toks56
-\MPscratchCnt=\count389
-\MPscratchDim=\dimen364
-\MPnumerator=\count390
-\makeMPintoPDFobject=\count391
-\everyMPtoPDFconversion=\toks57
+\nofMPsegments=\count388
+\nofMParguments=\count389
+\everyMPshowfont=\toks58
+\MPscratchCnt=\count390
+\MPscratchDim=\dimen365
+\MPnumerator=\count391
+\makeMPintoPDFobject=\count392
+\everyMPtoPDFconversion=\toks59
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
  (/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
-Package hyperref Info: Link coloring OFF on input line 55.
+Package hyperref Info: Link coloring OFF on input line 56.
  (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2021-04-02 v2.47 Cross-referencing by name of section
  (/usr/share/texlive/texmf-dist/tex/latex/refcount/refcount.sty
@@ -907,20 +920,20 @@ Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 ) (/usr/share/texlive/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
-\c@section@level=\count392
+\c@section@level=\count393
 )
-LaTeX Info: Redefining \ref on input line 55.
-LaTeX Info: Redefining \pageref on input line 55.
-LaTeX Info: Redefining \nameref on input line 55.
+LaTeX Info: Redefining \ref on input line 56.
+LaTeX Info: Redefining \pageref on input line 56.
+LaTeX Info: Redefining \nameref on input line 56.
  (./main.out) (./main.out)
 \@outlinefile=\write4
 \openout4 = `main.out'.
 
-\c@lstlisting=\count393
+\c@lstlisting=\count394
  (/usr/share/texlive/texmf-dist/tex/latex/translations/translations-basic-dictionary-english.trsl
 File: translations-basic-dictionary-english.trsl (english translation file `translations-basic-dictionary')
 )
-Package translations Info: loading dictionary `translations-basic-dictionary' for `english'. on input line 55.
+Package translations Info: loading dictionary `translations-basic-dictionary' for `english'. on input line 56.
  (./titlepage.tex
 <logos/Logotype_Nantes-U_noir-300dpi.png, id=103, 589.9641pt x 151.5261pt>
 File: logos/Logotype_Nantes-U_noir-300dpi.png Graphic file (type png)
@@ -971,13 +984,18 @@ Non-PDF special ignored!
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.60 \newpage
+l.61 \newpage
               [1] (./Abstract.tex) [2] (./Introduction.tex) [3] (./definitions_notations.tex
 Overfull \hbox (0.76717pt too wide) in paragraph at lines 44--49
 []\OT1/cmr/m/it/10 Let $\OML/cmm/m/it/10 x \OMS/cmsy/m/n/10 2 X[]$\OT1/cmr/m/it/10 . If there is some $\OML/cmm/m/it/10 ^^U \OMS/cmsy/m/n/10 2 \U/msb/m/n/10 R[]$ \OT1/cmr/m/it/10 such that $\OML/cmm/m/it/10 x \OMS/cmsy/m/n/10 2 X[]$ \OT1/cmr/m/it/10 is an op-ti-mal so-lu-tion of $[][] \OML/cmm/m/it/10 ^^U[]f\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 x\OT1/cmr/m/n/10 )$
  []
 
-[4]) (./Gravity Machine.tex
+[4]
+Overfull \hbox (17.2222pt too wide) in paragraph at lines 74--114
+[]$[]$ $[]$ 
+ []
+
+) (./Gravity Machine.tex
 Overfull \hbox (18.93427pt too wide) in paragraph at lines 2--5
 \OT1/cmr/m/n/10 op-ti-miza-tion prob-lem with bi-nary vari-ables. It is based the on the \OT1/cmr/m/it/10 Fea-si-bilty Pump \OT1/cmr/m/n/10 [[]]
  []
@@ -985,10 +1003,11 @@ Overfull \hbox (18.93427pt too wide) in paragraph at lines 2--5
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
+[5]
 
 LaTeX Warning: `!h' float specifier changed to `!ht'.
 
-) (./Science.tex [5]
+) (./Science.tex
 Overfull \hbox (43.55214pt too wide) in paragraph at lines 11--11
 [][][][]$\OT1/cmtt/m/n/8 https : / / discourse . julialang . org / t / access-[]infeasible-[]optimization-[]results-[]glpk-[]with-[]semicontinuous-[]variable /
  []
@@ -1066,28 +1085,28 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 (hyperref)                removing `math shift' on input line 19.
 
 [7] [8]
-<figures_tikz/counterExampleL.png, id=293, 862.22125pt x 862.22125pt>
+<figures_tikz/counterExampleL.png, id=298, 862.22125pt x 862.22125pt>
 File: figures_tikz/counterExampleL.png Graphic file (type png)
 <use figures_tikz/counterExampleL.png>
 Package pdftex.def Info: figures_tikz/counterExampleL.png  used on input line 70.
 (pdftex.def)             Requested size: 344.88239pt x 344.88239pt.
- [9 <./figures_tikz/counterExampleL.png>] [10]) (./code.tex) (./Conclusion.tex) (./Annexe.tex) [11] (./main.bbl) [12] (./main.aux)
+ [9 <./figures_tikz/counterExampleL.png>]) (./experiments-results.tex [10]) (./code.tex) (./Conclusion.tex) [11] (./main.bbl) (./Annexe.tex) [12] [13] (./main.aux)
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 126F6D8A8B34510157CFD3DBCB31D272;3833.
+(rerunfilecheck)             Checksum: 1D5B022B82ACE1AAEA4A0BDFBFAA9E87;3847.
  ) 
 Here is how much of TeX's memory you used:
- 34063 strings out of 478287
- 661435 string characters out of 5849289
- 994065 words of memory out of 5000000
- 51503 multiletter control sequences out of 15000+600000
+ 34560 strings out of 478287
+ 672584 string characters out of 5849289
+ 1015640 words of memory out of 5000000
+ 51971 multiletter control sequences out of 15000+600000
  484389 words of font info for 85 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 102i,25n,105p,732b,943s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 102i,25n,105p,747b,943s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbxti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb>
-Output written on main.pdf (13 pages, 399642 bytes).
+Output written on main.pdf (14 pages, 406232 bytes).
 PDF statistics:
- 466 PDF objects out of 1000 (max. 8388607)
- 396 compressed objects within 4 object streams
- 135 named destinations out of 1000 (max. 500000)
- 215 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 478 PDF objects out of 1000 (max. 8388607)
+ 405 compressed objects within 5 object streams
+ 141 named destinations out of 1000 (max. 500000)
+ 219 words of extra memory for PDF output out of 10000 (max. 10000000)
 

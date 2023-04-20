@@ -37,7 +37,7 @@ Below, we consider $J_0(x)$ (and $J_1(x)$) the set containing the index of varia
 Some well known modelization techniques are briefly presented and their pertinence for GM is studied. For the major part of them, 
 they are inspired by canonical cut constraints introduced by~\cite{canonical_cut} and used for the same purpose by~\cite{Hanafi2011}.
 
-\paragraph*{Canonical cut constraint :}
+\paragraph*{Canonical cut constraint:}
 \begin{proposition}\label{bincutconstraintexact}
     Let $x^0$ be a vector in $\set{0,1}^n$. The following inequality
     \begin{equation}
@@ -71,13 +71,41 @@ In other words $x^0 = x^1$ and $x^0 \neq x^1$ which is impossible. Then,~\ref{bi
         \caption{Feasible region}
     \end{figure}
     According to~\ref*{fig:counterExampleL}, $x^* = \left(0,1\right)$ is clearly the optimal solution whereas 
-    the optimal solution for the relaxed problem is $x^0 = \left( \frac{1}{2}, 0\right)$.
+    the optimal solution for the relaxed problem is $x^0 = \left( 0, \frac{1}{4}\right)$.
     Since, $x_1$ has a continuous value, only $x_2$ is present in the new constraint:
     \begin{equation}
         1-x_2 \geq 1 \Leftrightarrow x_2 = 0
     \end{equation}
     Consequently, this new constraint prevent the solver finding the $x^*$ and what is more make the problem infeasible.
 \end{proof}
+\begin{figure}
+    \centering
+    \begin{tikzpicture}[scale=9]
+        \filldraw[fill=green!5,draw=green] (0,0.25)--(0,1)--(1,1)--(1,0.25)--(0.75,0)--(0.25,0)--cycle;
+        \filldraw[fill=red!25,draw=red] (0,0)--(0,0.25)--(0.25,0)--cycle;
+        \filldraw[fill=red!25,draw=red] (1,0)--(1,0.25)--(0.75,0)--cycle;
+        \draw[step=0.25cm,color=gray!50] (0,0) grid (1,1);
+        \foreach \x in {0.25,0.5,0.75,1}{
+            \draw (\x cm, 0.25pt) -- (\x cm,-0.25pt) node[anchor=north] {$\x$};
+        }
+        \foreach \y in {0.25,0.5,0.75,1}{
+            \draw (0.25pt, \y cm) -- (-0.25pt,\y cm) node[anchor=east] {$\y$};
+        }
+        \draw[thick,->] (0,0)--(1.05,0) node[anchor=north west] {$x_1$};
+        \draw[thick,->] (0,0)--(0,1.05) node[anchor=south east] {$x_2$};
+        \draw[->,thick,violet] (0,0)--(0.35,0.35);
+        \foreach \x/\y in {0/0, 1/0}{
+            \filldraw[black] (\x,\y) circle (0.35pt);
+        }
+        \foreach \x/\y in {0/1, 1/1}{
+            \filldraw[teal] (\x,\y) circle (0.35pt);
+        }
+        \filldraw[blue] (0,0.25) circle (0.35pt);
+        \node[right,blue] at (0.01,0.25) {$x^0$};
+    \end{tikzpicture}
+    \caption{}
+\end{figure}
+
 %\input{"figures_tikz/counterExampleL.tex"}
 
 %\input{figures_tikz/counterExampleL.tex}
@@ -107,19 +135,3 @@ As shown by our empirical data, less than 20
 \section{Improving projection}
 By the same token as the generators improvement, the projection used during GM can be improved by adding some integrity constraints on the non 
 
-\section{Numerical experiments}
-Gravity Machine is implemented in Julia 1.8.5 \cite{Julia-2017}
-\subsection{Numerical instances}
-\subsection{Quality measure}
-\subsection{Numerical results}
-Experiments have been performed on-top of the following configuration:
-\begin{itemize}
-    \item Laptop: Dell - XPS 13 9300
-    \item OS: Linux Mint 21.1 Cinnamon - v5.6.8
-    \item Kernel version: 5.19.0-38-generic
-    \item Intel© Core™ i7-1065G7 CPU @ 1.30GHz × 4
-    \item L1: 320 KiB, L2: 2 MiB, L3: 8 MiB
-    \item RAM: 15.2 Go LDDR4
-    \item SSD: 1024.2 Go
-\end{itemize}
-\subsubsection{}

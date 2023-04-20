@@ -18,10 +18,11 @@
 \usepackage[english, onelanguage, ruled, lined, linesnumbered]{algorithm2e}
 \usepackage{listings}
 \usepackage[colorinlistoftodos]{todonotes}%TITLEPAGE
-%\usepackage{algorithm2e}
+\usepackage{colortbl}
+\usepackage{makecell}
 \usepackage{pgf,tikz}
 \usepackage{pstricks-add}
-\usetikzlibrary{arrows,plotmarks}
+\usetikzlibrary{arrows,plotmarks,patterns,patterns.meta}
 
 \title{MO-MILP Primal Heuristics\\ \large{Improvement of Gravity Machine}}
 \author{Erwan Meunier}
@@ -70,16 +71,17 @@
 
 \input{Science}
 
+\input{experiments-results}
+
 \input{code}
 
 \input{Conclusion}
-
-\input{Annexe}
-
 %\input{Questionnements}
 
 \newpage
 \bibliographystyle{apalike}
 \bibliography{biblio.bib}
+  
+\input{Annexe}
 
 \end{document}
