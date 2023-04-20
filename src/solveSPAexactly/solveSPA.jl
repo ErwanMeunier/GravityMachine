@@ -68,7 +68,7 @@ function main()
             times[i] = termination_status(solvedModel) == MOI.OPTIMAL ? begin println("--> exported") ; solve_time(solvedModel) end : -1 
             EBP = [Int.(round.(objective_value(solvedModel; result = i))) for i in 1:result_count(solvedModel)]
             XN,YN = loadNDPoints2SPA(file[4:end]) # getting the whole set of supported solutions
-            qualities[i] = 100*qualityMeasure(XN,YN,[sol[1] for sol in EBP],[sol[2] for sol in EBP]) # XN YN XEBP YEBP
+            qualities[i] = (!isempty(EBP) ? 100*qualityMeasure(XN,YN,[sol[1] for sol in EBP],[sol[2] for sol in EBP]) : 0.) # XN YN XEBP YEBP
             cardResults[i] = result_count(solvedModel)
             println(times[i])
             println("- - - - - - - - ")
