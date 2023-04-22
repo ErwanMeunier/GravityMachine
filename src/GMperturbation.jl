@@ -12,7 +12,7 @@ function perturbSolution!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1}, c
     nbvar = length(vg[k].sInt.x)
     candidats=[( abs( vg[k].sPrj.x[i] - vg[k].sInt.x[i] ) , i ) for i=1:nbvar]
     println(length([true for i=1:nbvar if vg[k].sPrj.x[i]==0.0]))
-    println("Candidats : ", length(candidats))
+    #println("Candidats : ", length(candidats))
     sort!(candidats, rev=true, by = x -> x[1])
 #    sort!(candidats,  by = x -> x[1])
 
@@ -67,8 +67,8 @@ function perturbSolution30!(vg::Vector{tGenerateur}, k::Int64, c1::Array{Int,1},
 
     candidats=[( vg[k].sPrj.x[i] , i ) for i=1:nbvar if vg[k].sPrj.x[i]>0. && vg[k].sPrj.x[i]<1.]
 #    sort!(candidats, rev=true, by = x -> x[1])
-    println("Candidats : ", candidats)
-    println("Nombre de candidats : ", length(candidats))
+    verbose ? println("Candidats pertubation: ", candidats) : nothing
+    verbose ? println("Nombre de candidats : ", length(candidats)) : nothing
 
     #@show vg[k].sPrj.x
     #@show vg[k].sInt.x

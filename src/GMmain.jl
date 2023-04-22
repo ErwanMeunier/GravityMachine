@@ -27,7 +27,7 @@ const slowtime = 0.
 const plotGenerators = true
 global generateurVisualise = -1
 
-global classic_GM::Bool = true
+global classic_GM::Bool = false
 
 global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
@@ -39,7 +39,7 @@ global diffGenerators::Bool = true # must be equal to true
 
 global IMPROVING_GENERATORS = true
 global PROJECTION_BinVar = true;
-global THRESHOLD_BinVar::Int64 = typemax(Int64)
+global THRESHOLD_BinVar::Int64 = 10
 global MAX_RATIO_BinVar_GENERATOR_IMPROVEMENT::Float64 = 1. # Ratio of bin variables set binary into the generator improvement ~ Must be between 0 and 1 meaning 0% to 100%
 global MAX_RATIO_BinVar_PROJECTION::Float64 = 1. # Ratio of bin variables set binary into the projection
 
@@ -341,13 +341,6 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::
                 verbose ? println("Generator : ", q) : nothing
                 verbose ? println("y1=", vg[q].sInt.y[1]) : nothing
                 verbose ? println("y2=", vg[q].sInt.y[2]) : nothing
-                #=
-                @expression(model, obj1[q], sum(c1[j]*x[j] for j in 1:nbvar))
-                @expression(model, obj2[q], sum(c2[j]*x[j] for j in 1:nbvar))
-
-                @constraint(model, vg[q].sInt.y[1] <= obj1)
-                @constraint(model, vg[q].sInt.y[2] <= obj2)
-                =#
                 diffGenerators ? @constraint(model, sum(x[j] for j in N0) + sum(1-x[j] for j in N1) >= 1) : nothing
                 #rightMember = 0.001*sum(cλ)
                 #sum(cλ[j]*x[j] for j in N0) + sum(cλ[j] for j in N1)
@@ -360,7 +353,7 @@ function transformLowerBoundedSet!(vg::Vector{tGenerateur}, A::Array{Int,2}, L::
             
             idxNonInt::Vector{Int} = [i for i=1:nbvar if !(isapprox(vg[k].sRel.x[i],0.,atol=10^-3)||isapprox(vg[k].sRel.x[i],1.,atol=10^-3))]
             verbose ? println("Number of non integral variables:", length(idxNonInt)) : nothing
-            idxNonInt = sort(idxNonInt, by=i->abs(vg[k].sRel.x[i]-1/2)) # The more x is close to 1/2 the more it is lucky to become a binary variable
+            idxNonInt = sort(idxNonInt, by=i->abs(vg[k].sRel.x[i]-1/2)) # The more x is close to 1/2 the likely to become a binary variable
             avgRatio += length(idxNonInt)/nbvar # benchmark
 
             nbBinVar = Int(ceil((max_ratio_bv_gi* length(idxNonInt))))
@@ -545,7 +538,6 @@ function GM( fname::String,
         improvedNadir::tPoint = tPoint(Limproved[end].y[1],Limproved[1].y[2]) 
 
         @printf("4) terraformation generateur par generateur \n\n")
-        labelInt = 1 # graphical purpose
         #--- Number of trials allowed
 
         globalNadir = tPoint(L[end].y[1],L[1].y[2])
@@ -562,20 +554,17 @@ function GM( fname::String,
         for k in [i for i in 1:nbgen if !isFeasible(vg,i)]
             temps = time()
             trial = 0
-        
-            # rounding solution : met a jour sInt dans vg --------------------------
-            #roundingSolution!(vg,k,c1,c2,d)  # un cone
-            #roundingSolutionnew24!(vg,k,c1,c2,d) # deux cones
+            nbcycles = 0
+            H = Vector{Vector{Int64}}()
 
             @makearrow(interface_roundingSolution!(vg,k,c1,c2,d),vg[k].sRel.y[1],vg[k].sRel.y[2],vg[k].sInt.y[1],vg[k].sInt.y[2],"orange")
 
             slowexec ? sleep(slowtime) : nothing
             # => Only floating point value are modified so splitByType does have style a sense
+            push!(H,[vg[k].sInt.y[1],vg[k].sInt.y[2]])
             verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
-            nbcycles = 0
             
             while !(t1=isFeasible(vg,k)) && !(t2=isFinished(trial, maxTrial)) && !(t3=isTimeout(temps, maxTime))
-                H::Vector{Vector{Int}} = Vector{Vector{Int}}()
                 trial+=1
                 α = 1.#1/(2^(trial-1)) # TODO
                 β = 0.#0.4 + 0.6*trial/maxTrial
@@ -597,15 +586,15 @@ function GM( fname::String,
                     @makearrow interface_roundingSolution!(vg,k,c1,c2,d) vg[k].sPrj.y[1] vg[k].sPrj.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "orange"
                     slowexec ? sleep(slowtime) : nothing
 
-                    println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4))
+                    verbose ? println("   t=",trial,"  |  Tps=", round(time()- temps, digits=4)) : nothing
 
                     # test detection cycle sur solutions entieres ------------------
-                    cycle = (vg[k].sInt.y[1],vg[k].sInt.y[2]) in H
+                    cycle = ([vg[k].sInt.y[1],vg[k].sInt.y[2]] in H)
                     if (cycle == true)
                         println("CYCLE!!!!!!!!!!!!!!!")
                         nbcycles += 1
                         # perturb solution
-                        @makearrow perturbSolution30!(vg,k,c1,c2,d) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "pink"
+                        @makearrow perturbSolution30!(vg,k,c1,c2,d) vg[k].sInt.y[1] vg[k].sInt.y[2] vg[k].sInt.y[1] vg[k].sInt.y[2] "fuchsia"
                         slowexec ? sleep(slowtime) : nothing
                         #perturbSolution40!(vg,k,c1,c2,d,λ1,λ2,γ)
                     end

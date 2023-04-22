@@ -1453,11 +1453,6 @@ INPUT ./Science.tex
 INPUT ./Science.tex
 INPUT Science.tex
 INPUT /usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmtt8.tfm
-INPUT ./figures_tikz/counterExampleL.png
-INPUT ./figures_tikz/counterExampleL.png
-INPUT figures_tikz/counterExampleL.png
-INPUT ./figures_tikz/counterExampleL.png
-INPUT ./figures_tikz/counterExampleL.png
 INPUT ./experiments-results.tex
 INPUT ./experiments-results.tex
 INPUT ./experiments-results.tex

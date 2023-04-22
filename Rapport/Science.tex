@@ -65,12 +65,7 @@ In other words $x^0 = x^1$ and $x^0 \neq x^1$ which is impossible. Then,~\ref{bi
         & -x_1 + x_2 \geq -\frac{3}{4}\\
         & x_1, \: x_2 \in \set{0,1}
     \end{align} 
-    \begin{figure}\label{fig:counterExampleL}
-        \centering
-        \includegraphics[scale=0.4]{figures_tikz/counterExampleL.png}
-        \caption{Feasible region}
-    \end{figure}
-    According to~\ref*{fig:counterExampleL}, $x^* = \left(0,1\right)$ is clearly the optimal solution whereas 
+    According to~\ref{fig:counterExampleL}, $x^* = \left(0,1\right)$ is clearly the optimal solution whereas 
     the optimal solution for the relaxed problem is $x^0 = \left( 0, \frac{1}{4}\right)$.
     Since, $x_1$ has a continuous value, only $x_2$ is present in the new constraint:
     \begin{equation}
@@ -104,19 +99,8 @@ In other words $x^0 = x^1$ and $x^0 \neq x^1$ which is impossible. Then,~\ref{bi
         \filldraw[blue] (0,0.25) circle (0.35pt);
         \node[above right,blue] at (0.01,0.25) {\large \textbf{$x^0$}};
     \end{tikzpicture}
-    \caption{}
+    \caption{Illustration of the counter-example}\label{fig:counterExampleL}
 \end{figure}
-
-%\input{"figures_tikz/counterExampleL.tex"}
-
-%\input{figures_tikz/counterExampleL.tex}
-
-Provided a feasible solution $s$ (known to be binary), the following constraint allows the solving process to avoid returning $s$ \textbf{only} as a solution \cite{canonical_cut}:
-\[
-\sum_{j \in \set{i \mid s_i = 0}}x_j +  \sum_{j \in \set{i \mid s_i = 1}}1-x_j \geq 1
-\]
-It is 
-\textcolor{red}{The lower bound set is no longer guaranteed}
 \paragraph{Cones}
 
 \begin{algorithm}

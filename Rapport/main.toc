@@ -1,7 +1,7 @@
 \contentsline {section}{\numberline {1}Abstract}{2}{section.1}%
 \contentsline {section}{\numberline {2}Introduction}{3}{section.2}%
 \contentsline {section}{\numberline {3}Definitions and Notations}{4}{section.3}%
-\contentsline {section}{\numberline {4}Gravity Machine}{5}{section.4}%
+\contentsline {section}{\numberline {4}Gravity Machine}{6}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Generators}{6}{subsection.4.1}%
 \contentsline {subsection}{\numberline {4.2}Projection}{6}{subsection.4.2}%
 \contentsline {subsection}{\numberline {4.3}Rounding}{6}{subsection.4.3}%
@@ -14,8 +14,8 @@
 \contentsline {subsection}{\numberline {5.3}Setting some variables binary}{8}{subsection.5.3}%
 \contentsline {subsubsection}{\numberline {5.3.1}Communicating vessels effect}{8}{subsubsection.5.3.1}%
 \contentsline {subsubsection}{\numberline {5.3.2}Same generators lead to the same solution}{8}{subsubsection.5.3.2}%
-\contentsline {paragraph}{Cones}{10}{AlgoLine.3.5}%
-\contentsline {subsubsection}{\numberline {5.3.3}Too much binary variables increase the solving time}{10}{subsubsection.5.3.3}%
+\contentsline {paragraph}{Cones}{9}{AlgoLine.3.5}%
+\contentsline {subsubsection}{\numberline {5.3.3}Too much binary variables increase the solving time}{9}{subsubsection.5.3.3}%
 \contentsline {section}{\numberline {6}Improving projection}{11}{section.6}%
 \contentsline {section}{\numberline {7}Numerical experiments}{11}{section.7}%
 \contentsline {subsection}{\numberline {7.1}Numerical instances}{11}{subsection.7.1}%

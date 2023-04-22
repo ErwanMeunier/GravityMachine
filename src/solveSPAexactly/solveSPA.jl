@@ -47,24 +47,27 @@ function solveBiSPA!(c1::Vector{Int}, c2::Vector{Int}, A::Array{Int,2}, nbsoluti
     optimize!(model)
     verbose ? solution_summary(model) : nothing
 
-    return model
+    return model, n, m
 end
 
 function main()
-    excluded = [16]
+    excluded = []
     timeLimit = 600.
-    nbsolLimit = 6
-    instances::Vector{String} = readdir(instancesPath)
-    times::Vector{Float64} = fill(-1., length(instances)) # none benchmarked instance are clearly discriminated
-    qualities::Vector{Float64} = fill(0., length(instances))
-    cardResults::Vector{Int64} = fill(0., length(instances))
+    nbsolLimit = 12 # twice as the sampling size
+    instances::Vector{String} = readdir(instancesPath)[14:14]
+    nbInstances = length(instances)
+    times::Vector{Float64} = fill(-1., nbInstances) # none benchmarked instance are clearly discriminated
+    qualities::Vector{Float64} = fill(0., nbInstances)
+    cardResults::Vector{Int64} = fill(0., nbInstances)
+    nbvar::Vector{Int64} = fill(0,nbInstances)
+    nbconstraints::Vector{Int64} = fill(0,nbInstances)
     for i in eachindex(instances)
         file = instances[i]
         if !(parse(Int, file[end-5:end-4]) in excluded) 
             # would be better to put a try catch end around here
             println("Instance: ", instances[i])
             c1, c2, A = loadInstance2SPA(instancesPath*file)
-            solvedModel = solveBiSPA!(c1,c2,A,nbsolLimit,timeLimit)
+            solvedModel, nbvar[i], nbconstraints[i] = solveBiSPA!(c1,c2,A,nbsolLimit,timeLimit)
             times[i] = termination_status(solvedModel) == MOI.OPTIMAL ? begin println("--> exported") ; solve_time(solvedModel) end : -1 
             EBP = [Int.(round.(objective_value(solvedModel; result = i))) for i in 1:result_count(solvedModel)]
             XN,YN = loadNDPoints2SPA(file[4:end]) # getting the whole set of supported solutions
@@ -76,6 +79,6 @@ function main()
             println("WARNING: ", instances[i], " is excluded")
         end
     end
-    output = DataFrame([instances,times,qualities,cardResults],[:Instances,:Times,:Quality,:Nb_results])
+    output = DataFrame([instances,times,qualities,cardResults,nbvar,nbconstraints],[:Instances,:Times,:Quality,:Nb_results,:Nb_variables,:Nb_constraints])
     CSV.write("../results/timeExactSolving.csv", output)
 end
