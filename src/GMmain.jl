@@ -31,7 +31,7 @@ global classic_GM::Bool = false
 
 global CHOICE_ROUNDING = 2 # FROM 1 TO 3
 global CHOICE_PROJECTION = 5 # FROM 1 TO 5
-global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4
+global CHOICE_COMPUTEDIRECTIONS = 2 # FROM 1 TO 4 WARNING FOR NOW THIS PARAMETER MUST STAY EQUAL TO 2 (mistake on λ1 and λ2 in the other methods)
 global CHOICE_PERTUBATION = 2 # FROM 1 TO 3
 global CONES_CONSTRAINED_IMPROVE_GENERATORS::Bool = false # see transformLowerBoundedSet
 global PERTUB_SAME_SOL_PROJECTION::Bool = false # useless

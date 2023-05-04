@@ -5,8 +5,13 @@ using HypothesisTests
 import PyPlot
 const plt = PyPlot
 plt.pygui(true)
-const path = "./results/resultsBinVar/12 April/"
+const path = "./results/resultsBinVar/21Aprils/"
+const refPath = "./results/Ref/"
 const pathPP = "./performanceProfile/"
+const pathrefExact = "./results/timeExactSolving/purifiedData21April.csv" # "Instances","Times","Quality","Number of (weakly) efficient points","Number of variables","Number of constraints"
+const refDfExact = DataFrame(CSV.File(pathrefExact))
+global orderByVar = sortperm(refDfExact[!,:Instances],by=x->refDfExact[refDfExact.Instances .== x,"Number of variables"][1])
+global orderByCons = sortperm(refDfExact[!,:Instances],by=x->refDfExact[refDfExact.Instances .== x,"Number of constraints"][1])
 const fields = [:Quality, 
                 :Number_Of_Cycles, 
                 :Max_Number_Of_Cycles, 
@@ -21,6 +26,7 @@ const fields = [:Quality,
                 ]
 const pathRatio = "./RatioBeforeAfter/"
 
+const subDir = ["MILPProjection/","NonMILPProjection/"]
 
 const fieldsAndCorrespondingOrderFunction = Dict{Symbol,Function}( # used in performanceProfile
                                                                     :Quality => maximum,
@@ -34,14 +40,35 @@ const fieldsAndCorrespondingOrderFunction = Dict{Symbol,Function}( # used in per
                                                                     :Nb_of_maxTrials_reached => minimum,
                                                                     :Avg_Ratio_Non_Bin_Var => minimum
                                                                  )
+
+const characteristicToName = Dict{Symbol,String}(
+                :Quality => "Quality", 
+                :Number_Of_Cycles => "Number of cycles", 
+                :Max_Number_Of_Cycles => "Max number of cycles", 
+                :Total_number_of_nd_points => "Exact number of non-dominated points", 
+                :Total_number_of_nd_points_found_by_GM => "Number of non-dominated points found by GM",
+                :Time => "Time (s)",
+                :Nb_of_feasible_points_found => "Number of feasible points found",
+                :Nb_of_maxTime_reached => "Number of maxTime limit is reached",
+                :Nb_of_maxTrials_reached =>"Number of maxTrial limit is reached",
+                :Avg_Ratio_Non_Bin_Var => "Average ratio of fractional variables",
+                :Supported_Sol => "Number of supported solutions"
+)
+
+const characteristicToFilename = Dict{Symbol,String}(
+                :Total_number_of_nd_points => "TotalNbNdPoints",
+                :Avg_Ratio_Non_Bin_Var => "AverageNonBinVar"
+)
+
 #=
 If characteristicBis is null only the values for the given characteristic is given, 
 the ratio of characteristic/characteristicBis is ploted otherwise.
 =#
-function plotQualities(filename::String, characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"resultRef.csv")
+function plotQualities(filename::String, characteristic::Symbol, characteristicBis=nothing)
     # parsing 
     df = DataFrame(CSV.File(filename))
-    refDf = DataFrame(CSV.File(refFile))
+    refDf = DataFrame(CSV.File(refPath*"0.0-0.0.csv"))
+    charRefDf = DataFrame(CSV.file(refPath*"AverageNonBinVar.csv"))
     # getting some informations
     names = df[!,:Instance]
     characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
@@ -87,121 +114,117 @@ function plotQualities(filename::String, characteristic::Symbol, characteristicB
     plt.close(fig)
 end
 
-function plotQualitiesScatterLine(characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"ref.csv")
-    # parsing 
-    refDf = DataFrame(CSV.File(refFile))
-    # getting some informations
-    
-    
-    characteristicRef = (characteristicBis==nothing ? refDf[!,characteristic] : (refDf[!,characteristic] ./ refDf[!,characteristicBis]))
-    #println(characteristicCurrent)
-    #println(characteristicRef)
-    #println(names)
-    names = refDf[!,:Instance]
-    xPos = collect(1:length(names))
-
-    width = 0.4
-    fig, ax1 = plt.subplots(figsize=(20,13),dpi=100)
-    #ax2 = ax1.twinx() # second axes
-    #fig.set_dpi(300)
-    #fig.set_size_inches(20.,13.)
-    ax1.tick_params(labelsize=6)
-    
-    plt.plot(xPos ,characteristicRef,color="green")
-    plt.scatter(xPos ,characteristicRef,label="State-of-the-art results",color="green")
-
-    # Setting the y_axis with a personalised density of ticks
-    nbpoints = 20
-    
-    maxY = 0
-    title::String = (characteristicBis==nothing ? string(characteristic) : string(characteristic)*"/"*string(characteristicBis))
-    plt.xticks(xPos, collect(map(x->x[end-5:end-4],names)))#,fontsize=5)
-    plt.xlabel("Instance")
-    plt.ylabel(title)
-    plt.title("Comparison for different ratio of fixed binary variables "*title)
-    meanRef = sum(characteristicRef)/length(characteristicRef)
-    plt.plot([xPos[1]-width,xPos[end]+width],[meanRef,meanRef],color="green",linestyle="dashed",label="Mean - ref State-of-the-art")
-
-    colorIdx = 1
-    colorSet = ["seagreen","maroon","chocolate","darkviolet","lawngreen","royalblue"]
-
-    for filename in [file for file in readdir(path) if (file[end-3:end]==".csv") && (file!="ref.csv")]
-        df = DataFrame(CSV.File(path*filename))
-        characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
-        maxy = max(maximum(characteristicRef),maximum(characteristicCurrent),maxY)
-        plt.plot(xPos ,characteristicCurrent,color=colorSet[colorIdx])
-        plt.scatter(xPos ,characteristicCurrent,label=filename[1:end-4],color=colorSet[colorIdx])
-        meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent)
-        #stdDev = 100*(characteristicCurrent .- characteristicRef ./ characteristicRef) 
-        pval = pvalue(HypothesisTests.SignedRankTest(characteristicCurrent,characteristicRef))
-        plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],color=colorSet[colorIdx],linestyle="dashed",label="Mean "*filename[1:end-4])
-        println(string(characteristic)*"---"*filename[1:end-4]*" - "*string(pval))
-        colorIdx += 1
-    end 
-    if maxY>0
-        yticks = range(start=0.,step=maxY/nbpoints,stop=maxY)
-        plt.yticks(yticks, labels=[string(v) for v in yticks])
+function plotQualitiesScatterLine(characteristic::Symbol, order::String="nothing", characteristicBis=nothing)
+    # parsing and getting info
+    refDf = DataFrame(CSV.File(refPath*"0.0-0.0.csv"))
+    refColor = "black"
+    uniqueColor = "royalblue"
+    #df = DataFrame()
+    name = ""
+    titlefile = ""
+    if order == "cons"
+        name = " sorted by ascending number of constraints"
+        titlefile = "bycons"
+        refDf[:,"Number of constraints"] = refDfExact[:,"Number of constraints"]
+        refDf = sort(refDf,"Number of constraints")
+    elseif order == "var"
+        name = " sorted by ascending number of variables"
+        titlefile = "byvar"
+        refDf[:,"Number of variables"] = refDfExact[:,"Number of variables"]
+        refDf = sort(refDf,"Number of variables")
     end
-    #ax2.set_yticks([meanCurrent,meanRef],["Means for SOTA","Mean new method"])
-    #plt.yticks([meanRef],["Mean-New Method"],color="orange")
-    #plt.yticks([meanCurrent],["Mean_State of the Art"],color="red")
-    plt.legend()
-    #plt.show()
-    #println("Saving path : ", filename[1:end-5]*"/"*string(characteristic)*".png")
-    plt.savefig(path*title*"scatline.png")
-    plt.close(fig)
+
+    for subdir in subDir
+        characteristicRef = (characteristicBis==nothing ? refDf[!,characteristic] : (refDf[!,characteristic] ./ refDf[!,characteristicBis]))
+        #characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
+
+        names = refDf[!,:Instance]
+        xPos = collect(1:length(names))
+
+        width = 0.4
+        fig, ax1 = plt.subplots(figsize=(20,13),dpi=100)
+        #ax2 = ax1.twinx() # second axes
+        #fig.set_dpi(300)
+        #fig.set_size_inches(20.,13.)
+        ax1.tick_params(labelsize=6)
+        
+        # Setting the y_axis with a personalised density of ticks
+        nbpoints = 20
+        
+        maxY = 0
+        title::String = (characteristicBis==nothing ? characteristicToName[characteristic] : characteristicToName[characteristic]*"/"*characteristicToName[characteristic])
+        plt.xticks(xPos, collect(map(x->x[end-5:end-4],names)))#,fontsize=5)
+        plt.xlabel("Instance"*name)
+        plt.ylabel(title)
+        #plt.title("Comparison for different vale of"*L"$\alpha$"*title)
+
+        colorIdx = 1 
+        colorSet = ["crimson","darkgoldenrod","darkorange","darkviolet","green","royalblue"]
+        alphas = collect(0.:0.25:1.)
+        
+        if (characteristic in [:Avg_Ratio_Non_Bin_Var,:Total_number_of_nd_points])
+            println("Path :", refPath*characteristicToFilename[characteristic]*".csv")
+            charRefDf = DataFrame(CSV.File(refPath*characteristicToFilename[characteristic]*".csv")) # Extracting the DataFrame from the current file
+            if order == "cons"
+                charRefDf[:,"Number of constraints"] = refDfExact[:,"Number of constraints"]
+                charRefDf = sort(refDf,"Number of constraints")
+            elseif order == "var"
+                charRefDf[:,"Number of variables"] = refDfExact[:,"Number of variables"]
+                charRefDf = sort(charRefDf,"Number of variables")
+            end
+            #println(charRefDf)
+            characteristicCurrent = charRefDf[!,characteristic] # characteristic which should be considered as ratio
+            maxy = maximum(characteristicCurrent)
+            plt.plot(xPos ,characteristicCurrent,color=uniqueColor) # CURVES with specific color to each characteristic
+            plt.scatter(xPos ,characteristicCurrent,color=uniqueColor) # SCATTER with specific color to each characteristic
+            meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent) # Average value of the current characteristic over the instances
+            #stdDev = 100*(characteristicCurrent .- characteristicRef ./ characteristicRef) 
+            #pval = pvalue(HypothesisTests.SignedRankTest(characteristicCurrent,characteristicRef)) # Gives the p-value from wilcoxon test
+            plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],color=uniqueColor,linestyle="dashed",label="Mean "*characteristicToName[characteristic])
+            #println(characteristicsToName[characteristic]*"--- AverageNonBinVar - "*string(pval))
+        else 
+            # Gives a color to each parametized variant 
+            # - - - 
+            colorIdx += (subdir=="NonMILPProjection/" ? 1 : 0)  
+            plt.plot(xPos ,characteristicRef,color=refColor)
+            plt.scatter(xPos ,characteristicRef,label="State-of-the-art results",color=refColor)
+            meanRef = sum(characteristicRef)/length(characteristicRef)
+            plt.plot([xPos[1]-width,xPos[end]+width],[meanRef,meanRef],color=refColor,linestyle="dashed",label="Mean - ref State-of-the-art")    
+            for filename in [file for file in readdir(path*subdir) if (file[end-3:end]==".csv") && (file!="ref.csv")]
+                df = DataFrame(CSV.File(path*subdir*filename)) # Extracting the DataFrame from the current file
+                if order == "cons"
+                    df[:,"Number of constraints"] = refDfExact[:,"Number of constraints"]
+                    df = sort(df,"Number of constraints")
+                elseif order == "var"
+                    df[:,"Number of variables"] = refDfExact[:,"Number of variables"]
+                    df = sort(df,"Number of variables")
+                end
+                characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis])) # characteristic which should be considered as ratio
+                maxy = max(maximum(characteristicRef),maximum(characteristicCurrent),maxY)
+                plt.plot(xPos ,characteristicCurrent,color=colorSet[colorIdx]) # CURVES with specific color to each characteristic
+                plt.scatter(xPos ,characteristicCurrent,label=L"$\alpha=$"*string(alphas[colorIdx]),color=colorSet[colorIdx]) # SCATTER with specific color to each characteristic
+                meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent) # Average value of the current characteristic over the instances
+                #stdDev = 100*(characteristicCurrent .- characteristicRef ./ characteristicRef) 
+                pval = pvalue(HypothesisTests.SignedRankTest(characteristicCurrent,characteristicRef)) # Gives the p-value from wilcoxon test
+                plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],color=colorSet[colorIdx],linestyle="dashed",label="Mean "*L"$\alpha=$"*string(alphas[colorIdx]))
+                println(characteristicToName[characteristic]*"---"*filename[1:end-4]*" - "*string(pval))
+                colorIdx += 1
+            end 
+        end
+        if maxY>0
+            yticks = range(start=0.,step=maxY/nbpoints,stop=maxY)
+            plt.yticks(yticks, labels=[string(v) for v in yticks])
+        end
+        #ax2.set_yticks([meanCurrent,meanRef],["Means for SOTA","Mean new method"])
+        #plt.yticks([meanRef],["Mean-New Method"],color="orange")
+        #plt.yticks([meanCurrent],["Mean_State of the Art"],color="red")
+        plt.legend()
+        #plt.show()
+        #println("Saving path : ", filename[1:end-5]*"/"*characteristicsToName[characteristic]*".png")
+        plt.savefig(path*subdir*title*titlefile*"scatline.png")
+        plt.close(fig)
+    end
 end
-#=
-function plotQualitiesScatterLineParam(filename::String, characteristic::Symbol, characteristicBis=nothing, refFile::String=path*"resultRef.csv")
-    # parsing 
-    df = DataFrame(CSV.File(filename))
-    refDf = DataFrame(CSV.File(refFile))
-    # getting some informations
-    names = df[!,:Instance]
-    characteristicCurrent = (characteristicBis==nothing ? df[!,characteristic] : (df[!,characteristic] ./ df[!,characteristicBis]))
-    characteristicRef = (characteristicBis==nothing ? refDf[!,characteristic] : (refDf[!,characteristic] ./ refDf[!,characteristicBis]))
-    #println(characteristicCurrent)
-    #println(characteristicRef)
-    #println(names)
-    
-    xPos = collect(1:length(names))
-
-    width = 0.4
-    fig, ax1 = plt.subplots()
-    #ax2 = ax1.twinx() # second axes
-    fig.set_dpi(300)
-    fig.set_size_inches(20.,13.)
-    ax1.tick_params(labelsize=6)
-    plt.plot(xPos ,characteristicCurrent,color="blue",)
-    plt.plot(xPos ,characteristicRef,color="green")
-    plt.scatter(xPos ,characteristicCurrent,label="New method",color="blue")
-    plt.scatter(xPos ,characteristicRef,label="State-of-the-art results",color="green")
-
-    # Setting the y_axis with a personalised density of ticks
-    nbpoints = 20
-    max_y = max(maximum(characteristicRef),maximum(characteristicCurrent))
-    yticks = range(start=0.,step=max_y/nbpoints,stop=max_y)
-    plt.yticks(yticks, labels=[string(v) for v in yticks])
-    
-    title::String = (characteristicBis==nothing ? string(characteristic) : string(characteristic)*"/"*string(characteristicBis))
-
-    plt.xticks(xPos, collect(map(x->x[end-5:end-4],names)))#,fontsize=5)
-    plt.xlabel("Instance")
-    plt.ylabel(title)
-    plt.title("Comparison between GM ref and "*filename[1:end-3]*"-"*title)
-    meanRef = sum(characteristicRef)/length(characteristicRef)
-    plt.plot([xPos[1]-width,xPos[end]+width],[meanRef,meanRef],color="green",linestyle="dashed",label="Mean - ref State-of-the-art")
-    meanCurrent = sum(characteristicCurrent)/length(characteristicCurrent)
-    plt.plot([xPos[1]-width,xPos[end]+width],[meanCurrent,meanCurrent],color="blue",linestyle="dashed",label="Mean - new method")
-    #ax2.set_yticks([meanCurrent,meanRef],["Means for SOTA","Mean new method"])
-    #plt.yticks([meanRef],["Mean-New Method"],color="orange")
-    #plt.yticks([meanCurrent],["Mean_State of the Art"],color="red")
-    plt.legend()
-    #plt.show()
-    #println("Saving path : ", filename[1:end-5]*"/"*string(characteristic)*".png")
-    plt.savefig(filename[1:end-4]*"/"*title*"scatline.png")
-    plt.close(fig)
-end=#
 
 function plotPerformances()
     csvf::Vector{String} = [file for file in readdir(path) if file[end-3:end]==".csv"]
@@ -319,7 +342,9 @@ function main()
     #plotRatioMIP()
     #performanceProfileFromRaw()
     for characteristic in fields
-        plotQualitiesScatterLine(characteristic)
+        for order in ["cons","var"]
+            plotQualitiesScatterLine(characteristic,order)
+        end
     end
 end
 

@@ -207,3 +207,22 @@ const configurationComputeDirections::Dict{Int,Function} = Dict{Int,Function}(
 function interface_computeDirections(L::Vector{tSolution{Float64}}, vg::Vector{tGenerateur};CHOICE::Int=CHOICE_COMPUTEDIRECTIONS)
     return configurationComputeDirections[CHOICE](L,vg)
 end
+
+function printlambdas(v1,v2)
+    λ1 = fill(0.,length(v1))
+    λ2 = fill(0.,length(v2))
+    n1 = maximum(v1)
+    n2 = maximum(v2)
+    for k in 1:length(v1)
+        xm=v1[k] # coordonnée z1 du générateur
+        ym=v2[k] # coordonnée z2 du générateur
+        Δy1 = n1-xm # abs(n1-xm)
+        Δy2 = n2-ym # abs(n2-ym)
+        λ2[k] =  1 - Δy1 / (Δy1+Δy2) # = Δy/(Δx + Δy)
+        λ1[k] =  1 - Δy2 / (Δy1+Δy2) # = Δx/(Δx + Δy) = 1 - λ1[k]
+    end
+    result = [(round(2*λ1[k]+v1[k],digits=2), round(2*λ2[k]+v2[k],digits=2)) for k in 1:length(v1)]
+    for k in 1:length(v1)
+        println(round(v1[k],digits=2),"/",round(v2[k],digits=2),"/",result[k][1],"/",result[k][2])
+    end
+end
